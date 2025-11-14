@@ -1,87 +1,84 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from django.utils import timezone
-from .models import LeaveType, LeavePolicy, LeaveBalance, LeaveRequest
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.db.models import Q
+from .models import LeaveType, Holiday, LeaveRequest
 from .serializers import (
-    LeaveTypeSerializer,
-    LeavePolicySerializer,
-    LeaveBalanceSerializer,
-    LeaveRequestSerializer
+    LeaveTypeSerializer, 
+    HolidaySerializer, 
+    LeaveRequestSerializer,
+    LeaveApprovalSerializer
 )
+from .permissions import IsOwnerOrManagerOrAdmin, IsManagerOrAdmin
 
 class LeaveTypeViewSet(viewsets.ModelViewSet):
-    queryset = LeaveType.objects.filter(is_active=True)
+    queryset = LeaveType.objects.all()
     serializer_class = LeaveTypeSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'code']
-    ordering_fields = ['name', 'days_allowed_per_year']
+    permission_classes = [IsAdminUser]
 
-class LeavePolicyViewSet(viewsets.ModelViewSet):
-    queryset = LeavePolicy.objects.select_related('leave_type')
-    serializer_class = LeavePolicySerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'leave_type__name']
-    ordering_fields = ['name']
-
-class LeaveBalanceViewSet(viewsets.ModelViewSet):
-    queryset = LeaveBalance.objects.select_related('employee', 'leave_type')
-    serializer_class = LeaveBalanceSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['employee', 'leave_type', 'year']
-    search_fields = ['employee__first_name', 'employee__last_name', 'leave_type__name']
-    ordering_fields = ['year', 'total_days']
+class HolidayViewSet(viewsets.ModelViewSet):
+    queryset = Holiday.objects.all()
+    serializer_class = HolidaySerializer
+    permission_classes = [IsAdminUser]
 
 class LeaveRequestViewSet(viewsets.ModelViewSet):
-    queryset = LeaveRequest.objects.select_related('employee', 'leave_type', 'approved_by', 'rejected_by', 'handover_to')
+    queryset = LeaveRequest.objects.all().select_related('employee__user', 'leave_type', 'reviewed_by')
     serializer_class = LeaveRequestSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['employee', 'leave_type', 'status', 'start_date', 'end_date']
-    search_fields = ['employee__first_name', 'employee__last_name', 'leave_type__name']
-    ordering_fields = ['start_date', 'end_date', 'status']
+    permission_classes = [IsAuthenticated, IsOwnerOrManagerOrAdmin]
 
-    @action(detail=True, methods=['post'])
-    def submit(self, request, pk=None):
-        """Submit a leave request for approval"""
-        leave_request = self.get_object()
-        if leave_request.status != 'draft':
-            return Response({'error': 'Only draft leave requests can be submitted'}, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return LeaveRequest.objects.all()
         
-        leave_request.status = 'submitted'
-        leave_request.submitted_at = timezone.now()
-        leave_request.save()
-        return Response({'message': 'Leave request submitted successfully'})
+        employee = user.employee_profile
+        return LeaveRequest.objects.filter(
+            Q(employee=employee) | 
+            Q(employee__manager=employee)
+        )
 
-    @action(detail=True, methods=['post'])
+    def perform_create(self, serializer):
+        serializer.save(employee=self.request.user.employee_profile)
+
+    @action(detail=True, methods=['post'], 
+            permission_classes=[IsManagerOrAdmin], 
+            serializer_class=LeaveApprovalSerializer)
     def approve(self, request, pk=None):
-        """Approve a leave request"""
         leave_request = self.get_object()
-        if leave_request.status not in ['submitted', 'pending_approval']:
-            return Response({'error': 'Only submitted or pending leave requests can be approved'}, status=status.HTTP_400_BAD_REQUEST)
+        if leave_request.status != 'PENDING':
+            return Response(
+                {"error": "This request is not pending approval."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        leave_request.status = 'approved'
-        leave_request.approved_by = request.user
-        leave_request.approved_at = timezone.now()
-        leave_request.approval_comments = request.data.get('comments', '')
+        serializer = LeaveApprovalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        leave_request.status = LeaveRequest.LeaveStatus.APPROVED
+        leave_request.reviewed_by = request.user.employee_profile
+        leave_request.review_comments = serializer.validated_data.get('review_comments', 'Approved')
         leave_request.save()
-        return Response({'message': 'Leave request approved'})
+        
+        return Response(LeaveRequestSerializer(leave_request).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], 
+            permission_classes=[IsManagerOrAdmin],
+            serializer_class=LeaveApprovalSerializer)
     def reject(self, request, pk=None):
-        """Reject a leave request"""
         leave_request = self.get_object()
-        if leave_request.status not in ['submitted', 'pending_approval']:
-            return Response({'error': 'Only submitted or pending leave requests can be rejected'}, status=status.HTTP_400_BAD_REQUEST)
+        if leave_request.status != 'PENDING':
+            return Response(
+                {"error": "This request is not pending approval."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = LeaveApprovalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         
-        leave_request.status = 'rejected'
-        leave_request.rejected_by = request.user
-        leave_request.rejected_at = timezone.now()
-        leave_request.rejection_reason = request.data.get('reason', '')
+        leave_request.status = LeaveRequest.LeaveStatus.REJECTED
+        leave_request.reviewed_by = request.user.employee_profile
+        leave_request.review_comments = serializer.validated_data.get('review_comments', 'Rejected')
         leave_request.save()
-        return Response({'message': 'Leave request rejected'})
+        
+        return Response(LeaveRequestSerializer(leave_request).data)

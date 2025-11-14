@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Performance{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h2">My Performance</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+            <i class="fas fa-plus me-1"></i> Add New Goal
+        </button>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">My Active Goals (KPIs)</h5>
+        </div>
+        <div class="card-body">
+            <div class="list-group" id="goal-list">
+                </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">My Review History</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Review Date</th>
+                            <th>Reviewer</th>
+                            <th>Status</th>
+                            <th>Rating (1-5)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="review-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadGoals();
+        loadReviews();
+    });
+
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Authorization': `Token ${token}` };
+
+    async function loadGoals() {
+        const response = await fetch('/api/performance/goals/?status=ACTIVE', { headers });
+        const goals = await response.json();
+        
+        const list = document.getElementById('goal-list');
+        list.innerHTML = ''; 
+
+        if (goals.length === 0) {
+            list.innerHTML = '<p class="text-muted">You have no active goals.</p>';
+        }
+
+        goals.forEach(goal => {
+            let item = `
+                <a href="#" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">${goal.title}</h5>
+                        <small class="text-muted">Due: ${goal.due_date}</small>
+                    </div>
+                    <p class="mb-1">${goal.description}</p>
+                </a>
+            `;
+            list.innerHTML += item;
+        });
+    }
+
+    async function loadReviews() {
+        const response = await fetch('/api/performance/reviews/', { headers });
+        const reviews = await response.json();
+        
+        const tableBody = document.getElementById('review-table-body');
+        tableBody.innerHTML = ''; 
+
+        reviews.forEach(review => {
+            let row = `
+                <tr>
+                    <td><strong>${review.review_date}</strong></td>
+                    <td>${review.reviewer || 'N/A'}</td>
+                    <td><span class="badge bg-info">${review.status}</span></td>
+                    <td><strong>${review.overall_rating || 'N/A'}</strong></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewReview(${review.id})">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    function viewReview(id) {
+        // This function would open a modal and fetch/display data
+        // from /api/performance/reviews/${id}/
+        alert(`Show details for review ${id}`);
+    }
+</script>
+{% endblock %}

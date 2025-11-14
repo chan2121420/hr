@@ -1,0 +1,104 @@
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadLeaveRequests();
+        loadLeaveTypes();
+    });
+
+    // Form submission
+    document.getElementById('leaveRequestForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const body = {
+            leave_type_id: document.getElementById('leave_type').value,
+            start_date: document.getElementById('start_date').value,
+            end_date: document.getElementById('end_date').value,
+            reason: document.getElementById('reason').value,
+        };
+        
+        try {
+            await hrApi.post('leaves/requests/', body);
+            bootstrap.Modal.getInstance(document.getElementById('requestLeaveModal')).hide();
+            loadLeaveRequests();
+            showToast('Leave request submitted successfully.', 'success');
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'danger');
+        }
+    });
+
+    async function loadLeaveRequests() {
+        try {
+            const requests = await hrApi.get('leaves/requests/');
+            const tableBody = document.getElementById('leave-table-body');
+            tableBody.innerHTML = ''; 
+
+            if (requests.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No leave requests found.</td></tr>';
+                return;
+            }
+
+            requests.forEach(req => {
+                let statusBadge = getStatusBadge(req.status);
+                let row = `
+                    <tr>
+                        <td><strong>${req.leave_type}</strong></td>
+                        <td>${req.start_date} to ${req.end_date}</td>
+                        <td>${req.total_leave_days}</td>
+                        <td>${statusBadge}</td>
+                        <td>${req.reviewed_by || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    ${req.status !== 'PENDING' ? 'disabled' : ''} 
+                                    onclick="cancelRequest(${req.id}, this)">
+                                Cancel
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        } catch (error) {
+            showToast(`Failed to load requests: ${error.message}`, 'danger');
+        }
+    }
+
+    async function loadLeaveTypes() {
+        try {
+            const types = await hrApi.get('leaves/types/');
+            const select = document.getElementById('leave_type');
+            select.innerHTML = '<option value="">Select a type...</option>';
+            types.forEach(type => {
+                select.innerHTML += `<option value="${type.id}">${type.name}</option>`;
+            });
+        } catch (error) {
+            showToast('Failed to load leave types.', 'danger');
+        }
+    }
+
+    // *** NEW FUNCTIONALITY ***
+    async function cancelRequest(id, button) {
+        if (!confirm('Are you sure you want to cancel this request?')) {
+            return;
+        }
+        
+        button.disabled = true;
+        
+        try {
+            // We use PATCH to update just the status
+            await hrApi.patch(`leaves/requests/${id}/`, { status: 'CANCELLED' });
+            showToast('Request cancelled.', 'info');
+            loadLeaveRequests(); // Refresh the list
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'danger');
+            button.disabled = false;
+        }
+    }
+
+    function getStatusBadge(status) {
+        let badgeClass = 'bg-secondary';
+        if (status === 'PENDING') badgeClass = 'bg-warning text-dark';
+        if (status === 'APPROVED') badgeClass = 'bg-success';
+        if (status === 'REJECTED') badgeClass = 'bg-danger';
+        return `<span class="badge ${badgeClass}">${status.replace('_', ' ')}</span>`;
+    }
+    
+</script>

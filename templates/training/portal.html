@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Training{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <h1 class="h2 mb-4">My Training & Development</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">My Learning Plan</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Course Title</th>
+                            <th>Provider</th>
+                            <th>Session Dates</th>
+                            <th>Status</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="training-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadEnrollments();
+    });
+
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Authorization': `Token ${token}` };
+
+    async function loadEnrollments() {
+        const response = await fetch('/api/training/enrollments/', { headers });
+        const enrollments = await response.json();
+        
+        const tableBody = document.getElementById('training-table-body');
+        tableBody.innerHTML = ''; 
+
+        if (enrollments.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">You are not enrolled in any training.</td></tr>';
+        }
+
+        enrollments.forEach(item => {
+            let statusBadge = getStatusBadge(item.status);
+            let row = `
+                <tr>
+                    <td><strong>${item.session.course}</strong></td>
+                    <td>${item.session.course.provider || 'N/A'}</td>
+                    <td>${new Date(item.session.start_date).toLocaleDateString()} - ${new Date(item.session.end_date).toLocaleDateString()}</td>
+                    <td>${statusBadge}</td>
+                    <td><strong>${item.score || 'N/A'}</strong></td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    function getStatusBadge(status) {
+        let badgeClass = 'bg-secondary';
+        if (status === 'ENROLLED') badgeClass = 'bg-info text-dark';
+        if (status === 'IN_PROGRESS') badgeClass = 'bg-primary';
+        if (status === 'COMPLETED') badgeClass = 'bg-success';
+        if (status === 'FAILED') badgeClass = 'bg-danger';
+        return `<span class="badge ${badgeClass}">${status}</span>`;
+    }
+</script>
+{% endblock %}

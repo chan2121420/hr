@@ -1,107 +1,72 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from django.utils import timezone
-from .models import (
-    PayrollComponent, EmployeePayrollComponent,
-    PayrollPeriod, Payslip, PayslipComponent,
-    LoanAdvance
-)
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from .models import SalaryComponent, EmployeeSalary, Payslip
 from .serializers import (
-    PayrollComponentSerializer, EmployeePayrollComponentSerializer,
-    PayrollPeriodSerializer, PayslipSerializer, PayslipComponentSerializer,
-    LoanAdvanceSerializer
+    SalaryComponentSerializer,
+    EmployeeSalarySerializer,
+    PayslipSerializer,
+    PayrollRunSerializer
 )
+from .utils import generate_payslip_for_employee
+from apps.employees.models import Employee
+from apps.accounts.permissions import IsAdminOrReadOnly
+import calendar
+import datetime
 
-# Payroll Components
-class PayrollComponentViewSet(viewsets.ModelViewSet):
-    queryset = PayrollComponent.objects.filter(is_active=True)
-    serializer_class = PayrollComponentSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'code']
-    ordering_fields = ['name', 'component_type']
+class SalaryComponentViewSet(viewsets.ModelViewSet):
+    queryset = SalaryComponent.objects.all()
+    serializer_class = SalaryComponentSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
-class EmployeePayrollComponentViewSet(viewsets.ModelViewSet):
-    queryset = EmployeePayrollComponent.objects.select_related('employee', 'component')
-    serializer_class = EmployeePayrollComponentSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['employee', 'component', 'is_active']
-    search_fields = ['employee__first_name', 'employee__last_name', 'component__name']
-    ordering_fields = ['effective_from', 'amount']
+class EmployeeSalaryViewSet(viewsets.ModelViewSet):
+    queryset = EmployeeSalary.objects.all()
+    serializer_class = EmployeeSalarySerializer
+    permission_classes = [IsAdminUser]
 
-# Payroll Periods
-class PayrollPeriodViewSet(viewsets.ModelViewSet):
-    queryset = PayrollPeriod.objects.prefetch_related('payslips')
-    serializer_class = PayrollPeriodSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name']
-    ordering_fields = ['start_date', 'end_date']
-
-    @action(detail=True, methods=['post'])
-    def finalize(self, request, pk=None):
-        period = self.get_object()
-        if period.is_finalized:
-            return Response({'error': 'Period already finalized'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Example: calculate totals
-        total_gross = sum(p.gross_salary for p in period.payslips.all())
-        total_deductions = sum(p.total_deductions for p in period.payslips.all())
-        total_net = sum(p.net_salary for p in period.payslips.all())
-
-        period.total_gross = total_gross
-        period.total_deductions = total_deductions
-        period.total_net = total_net
-        period.is_finalized = True
-        period.save()
-        return Response({'message': 'Payroll period finalized successfully'})
-
-# Payslips
 class PayslipViewSet(viewsets.ModelViewSet):
-    queryset = Payslip.objects.select_related('employee', 'period').prefetch_related('components')
+    queryset = Payslip.objects.all().select_related('employee__user').prefetch_related('entries__component')
     serializer_class = PayslipSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['employee', 'period', 'is_paid']
-    search_fields = ['employee__first_name', 'employee__last_name', 'period__name']
-    ordering_fields = ['period', 'net_salary']
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Payslip.objects.all()
+        return Payslip.objects.filter(employee=user.employee_profile)
 
-    @action(detail=True, methods=['post'])
-    def mark_paid(self, request, pk=None):
-        payslip = self.get_object()
-        if payslip.is_paid:
-            return Response({'error': 'Payslip already marked as paid'}, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, methods=['post'], 
+            permission_classes=[IsAdminUser], 
+            serializer_class=PayrollRunSerializer)
+    def run_payroll(self, request):
+        serializer = PayrollRunSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         
-        payslip.is_paid = True
-        payslip.payment_date = timezone.now().date()
-        payslip.save()
-        return Response({'message': 'Payslip marked as paid'})
-
-# Loans / Advances
-class LoanAdvanceViewSet(viewsets.ModelViewSet):
-    queryset = LoanAdvance.objects.select_related('employee', 'approved_by')
-    serializer_class = LoanAdvanceSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['employee', 'status', 'loan_type']
-    search_fields = ['employee__first_name', 'employee__last_name', 'purpose']
-    ordering_fields = ['start_date', 'amount']
-
-    @action(detail=True, methods=['post'])
-    def repay(self, request, pk=None):
-        loan = self.get_object()
-        amount = request.data.get('amount')
-        if not amount:
-            return Response({'error': 'Amount required'}, status=status.HTTP_400_BAD_REQUEST)
+        month = serializer.validated_data['month']
+        year = serializer.validated_data['year']
         
-        loan.amount_repaid += float(amount)
-        if loan.amount_repaid >= loan.amount:
-            loan.status = 'completed'
-        else:
-            loan.status = 'repaying'
-        loan.save()
-        return Response({'message': f'Loan repayment of {amount} recorded', 'balance': loan.balance})
+        _, last_day = calendar.monthrange(year, month)
+        start_date = datetime.date(year, month, 1)
+        end_date = datetime.date(year, month, last_day)
+        
+        active_employees = Employee.objects.filter(status='ACTIVE')
+        
+        success_count = 0
+        failed_count = 0
+        errors = []
+        
+        for employee in active_employees:
+            try:
+                generate_payslip_for_employee(employee, start_date, end_date)
+                success_count += 1
+            except Exception as e:
+                failed_count += 1
+                errors.append(f"Failed for {employee}: {str(e)}")
+                
+        return Response({
+            "message": "Payroll run completed.",
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "errors": errors
+        }, status=status.HTTP_200_OK)

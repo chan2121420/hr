@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Analytics Dashboard - HRMaster{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <h1 class="h2 mb-4">Analytics Dashboard</h1>
+
+    <div class="row" id="summary-cards">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Active Employees</div>
+                            <div class="h5 mb-0 fw-bold text-gray-800" id="total-employees">...</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+    <div class="row">
+
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold text-primary">Headcount by Department</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="headcountDeptChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold text-primary">Employees by Type</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="employmentTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Function to get Auth Token from localStorage
+    function getAuthToken() {
+        return localStorage.getItem('authToken');
+    }
+
+    // Function to fetch data from our API
+    async function fetchAnalyticsData(endpoint) {
+        const token = getAuthToken();
+        const response = await fetch(`/api/analytics/${endpoint}/`, {
+            headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            console.error('Failed to fetch data');
+            return null;
+        }
+        return await response.json();
+    }
+
+    // 1. Load Summary Cards
+    document.addEventListener('DOMContentLoaded', async () => {
+        const summaryData = await fetchAnalyticsData('summary');
+        if (summaryData) {
+            document.getElementById('total-employees').textContent = summaryData.total_employees;
+            // You would populate the other cards here
+            // e.g., document.getElementById('pending-leaves').textContent = summaryData.pending_leaves;
+        }
+
+        // 2. Load Headcount Chart
+        const headcountData = await fetchAnalyticsData('headcount');
+        if (headcountData) {
+            new Chart(document.getElementById('headcountDeptChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: headcountData.by_department.map(d => d.key),
+                    datasets: [{
+                        data: headcountData.by_department.map(d => d.value),
+                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                },
+            });
+
+            new Chart(document.getElementById('employmentTypeChart'), {
+                type: 'pie',
+                data: {
+                    labels: headcountData.by_employment_type.map(d => d.key),
+                    datasets: [{
+                        data: headcountData.by_employment_type.map(d => d.value),
+                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                },
+            });
+        }
+    });
+</script>
+{% endblock %}

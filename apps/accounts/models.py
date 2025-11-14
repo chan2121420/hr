@@ -1,86 +1,69 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
-from apps.core.models import TimeStampedModel
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
 
-class User(AbstractUser):
-    """Extended user model"""
-    ROLE_CHOICES = [
-        ('superadmin', 'Super Administrator'),
-        ('admin', 'Company Administrator'),
-        ('hr_manager', 'HR Manager'),
-        ('hr_officer', 'HR Officer'),
-        ('dept_manager', 'Department Manager'),
-        ('team_lead', 'Team Lead'),
-        ('employee', 'Employee'),
-    ]
-    
-    company = models.ForeignKey(
-        'core.Company',
-        on_delete=models.CASCADE,
-        related_name='users',
-        null=True
-    )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee')
-    employee = models.OneToOneField(
-        'employees.Employee',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='user_account'
-    )
-    phone = models.CharField(max_length=20, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)  # Pillow required
-    is_verified = models.BooleanField(default=False)
-    last_login_ip = models.GenericIPAddressField(null=True, blank=True)
-    force_password_change = models.BooleanField(default=False)
+class Role(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
 
-    # Override groups and permissions to avoid clashes
-    groups = models.ManyToManyField(
-        Group,
-        related_name='custom_user_set',  # unique related_name
-        blank=True,
-        help_text='The groups this user belongs to.',
-        verbose_name='groups',
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='custom_user_permissions',  # unique related_name
-        blank=True,
-        help_text='Specific permissions for this user.',
-        verbose_name='user permissions',
-    )
+    def __str__(self):
+        return self.name
 
-    class Meta:
-        permissions = [
-            ('view_all_employees', 'Can view all employees'),
-            ('approve_leave', 'Can approve leave requests'),
-            ('process_payroll', 'Can process payroll'),
-            ('manage_tasks', 'Can manage task allocation'),
-            ('view_analytics', 'Can view analytics dashboard'),
-            ('manage_performance', 'Can manage performance reviews'),
-        ]
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password, **extra_fields):
+        if not email:
+            raise ValueError(_('The Email must be set'))
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
 
-class UserSession(TimeStampedModel):
-    """Track user sessions for security"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
-    session_key = models.CharField(max_length=40)
-    ip_address = models.GenericIPAddressField()
-    user_agent = models.TextField()
-    is_active = models.BooleanField(default=True)
-    expires_at = models.DateTimeField()
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
 
-class AuditLog(TimeStampedModel):
-    """Audit trail for all system activities"""
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
-    action = models.CharField(max_length=50)  # CREATE, UPDATE, DELETE, VIEW, APPROVE, etc.
-    model_name = models.CharField(max_length=100)
-    object_id = models.CharField(max_length=100)
-    details = models.JSONField()
-    ip_address = models.GenericIPAddressField()
-    
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['-created_at']),
-            models.Index(fields=['user', '-created_at']),
-        ]
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError(_('Superuser must have is_staff=True.'))
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError(_('Superuser must have is_superuser=True.'))
+        return self.create_user(email, password, **extra_fields)
+
+class CustomUser(AbstractUser):
+    username = models.CharField(max_length=150, blank=True, null=True)
+    email = models.EmailField(_('email address'), unique=True)
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    objects = CustomUserManager()
+
+    def __str__(self):
+        return self.email
+
+class Profile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, default='avatars/default.png')
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    address_line_1 = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.user.email} Profile'
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()

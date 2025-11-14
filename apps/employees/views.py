@@ -1,97 +1,77 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Employee, EmployeeSkill
-from .serializers import EmployeeListSerializer, EmployeeDetailSerializer
-from .filters import EmployeeFilter
 
+from .models import Department, Designation, Employee, EmergencyContact, BankDetails, EmployeeDocument
+from .serializers import (
+    DepartmentSerializer, 
+    DesignationSerializer, 
+    EmployeeSerializer,
+    EmployeeCreateSerializer,
+    EmergencyContactSerializer, 
+    BankDetailsSerializer, 
+    EmployeeDocumentSerializer
+)
+from .filters import EmployeeFilter
+from apps.accounts.permissions import IsAdminOrReadOnly
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+class DesignationViewSet(viewsets.ModelViewSet):
+    queryset = Designation.objects.all()
+    serializer_class = DesignationSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 class EmployeeViewSet(viewsets.ModelViewSet):
-    """
-    Employee CRUD operations with filtering, search, and ordering.
-    """
-    queryset = Employee.objects.select_related(
-        'department', 'position', 'manager', 'company'
-    ).prefetch_related('skills', 'documents')
-
-    # Default serializer
-    serializer_class = EmployeeListSerializer
-    permission_classes = [IsAuthenticated]
-
-    # Filters, search, ordering
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    queryset = Employee.objects.all().select_related(
+        'user__profile', 
+        'department', 
+        'designation', 
+        'manager__user', 
+        'bank_details'
+    ).prefetch_related(
+        'emergency_contacts', 
+        'documents'
+    )
+    permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend]
     filterset_class = EmployeeFilter
-    search_fields = ['first_name', 'last_name', 'employee_id', 'work_email']
-    ordering_fields = ['employee_id', 'date_joined', 'first_name']
-    ordering = ['employee_id']  # default ordering
 
     def get_serializer_class(self):
-        """Return detailed serializer for retrieve action"""
-        if self.action == 'retrieve':
-            return EmployeeDetailSerializer
-        return EmployeeListSerializer
+        if self.action == 'create':
+            return EmployeeCreateSerializer
+        return EmployeeSerializer
 
-    @action(detail=True, methods=['get'])
-    def performance_summary(self, request, pk=None):
-        """Get employee performance summary"""
+    @action(detail=True, methods=['get', 'post'], serializer_class=EmergencyContactSerializer)
+    def contacts(self, request, pk=None):
         employee = self.get_object()
+        if request.method == 'POST':
+            serializer = EmergencyContactSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(employee=employee)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        contacts = employee.emergency_contacts.all()
+        serializer = EmergencyContactSerializer(contacts, many=True)
+        return Response(serializer.data)
 
-        # Fallback if employee has no performance objects
-        task_perf = getattr(employee, 'task_performance', None)
-        reviews = getattr(employee, 'performance_reviews', Employee.objects.none()).filter(
-            status='completed'
-        ).order_by('-created_at')[:5]
-        goals = getattr(employee, 'goals', Employee.objects.none()).filter(
-            status__in=['in_progress', 'approved']
-        )
-
-        return Response({
-            'task_performance': {
-                'overall_score': getattr(task_perf, 'overall_performance_score', 0),
-                'completion_rate': (
-                    task_perf.tasks_completed_on_time / task_perf.total_tasks_completed * 100
-                    if task_perf and task_perf.total_tasks_completed > 0 else 0
-                ),
-                'current_workload': getattr(task_perf, 'current_task_count', 0)
-            },
-            'recent_reviews': [
-                {
-                    'cycle': getattr(r.cycle, 'name', ''),
-                    'rating': getattr(r, 'overall_rating', 0),
-                    'date': getattr(r, 'completed_at', None)
-                } for r in reviews
-            ],
-            'active_goals': [
-                {
-                    'title': getattr(g, 'title', ''),
-                    'progress': getattr(g, 'progress_percentage', 0),
-                    'due_date': getattr(g, 'due_date', None)
-                } for g in goals
-            ]
-        })
-
-    @action(detail=True, methods=['post'])
-    def add_skill(self, request, pk=None):
-        """Add a skill to an employee"""
+    @action(detail=True, methods=['get', 'put', 'patch'], serializer_class=BankDetailsSerializer)
+    def bank_details(self, request, pk=None):
         employee = self.get_object()
-        skill_data = request.data
-
-        skill = EmployeeSkill.objects.create(
-            employee=employee,
-            skill_name=skill_data.get('skill_name'),
-            proficiency=skill_data.get('proficiency'),
-            years_experience=skill_data.get('years_experience', None),
-            certified=skill_data.get('certified', False)
-        )
-
-        return Response({
-            'message': 'Skill added successfully',
-            'skill': {
-                'name': skill.skill_name,
-                'proficiency': skill.proficiency,
-                'years_experience': skill.years_experience,
-                'certified': skill.certified
-            }
-        }, status=status.HTTP_201_CREATED)
+        bank_details = employee.bank_details
+        
+        if request.method in ['PUT', 'PATCH']:
+            serializer = BankDetailsSerializer(bank_details, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = BankDetailsSerializer(bank_details)
+        return Response(serializer.data)

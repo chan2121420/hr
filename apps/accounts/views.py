@@ -1,48 +1,75 @@
-from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view, permission_classes
-from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, AuditLog
-from .serializers import UserSerializer, UserCreateSerializer, LoginSerializer, AuditLogSerializer
+from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
+from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
+from django.contrib.auth import logout
+from .models import CustomUser, Profile, Role
+from .serializers import (
+    UserSerializer, 
+    ProfileSerializer, 
+    RoleSerializer, 
+    RegisterSerializer, 
+    LoginSerializer
+)
+from .permissions import IsOwnerOrAdmin, IsAdminOrReadOnly
+
+class RegisterView(generics.CreateAPIView):
+    queryset = CustomUser.objects.all()
+    permission_classes = [AllowAny]
+    serializer_class = RegisterSerializer
+
+class LoginView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        user_serializer = UserSerializer(user, context={'request': request})
+        return Response({
+            "token": token.key,
+            "user": user_serializer.data
+        }, status=status.HTTP_200_OK)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, Token.DoesNotExist):
+            pass
+        
+        logout(request)
+        return Response(
+            {"detail": "Successfully logged out."}, 
+            status=status.HTTP_200_OK
+        )
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all().select_related('profile', 'role').order_by('id')
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return UserCreateSerializer
-        return UserSerializer
+class ProfileViewSet(viewsets.ModelViewSet):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [IsOwnerOrAdmin]
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    def me(self, request):
-        """Return current logged in user"""
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Profile.objects.all()
+        return Profile.objects.filter(user=self.request.user)
+    
+    def get_object(self):
+        if self.kwargs.get('pk') == 'me':
+            return self.request.user.profile
+        return super().get_object()
 
-class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = AuditLog.objects.all()
-    serializer_class = AuditLogSerializer
-    permission_classes = [IsAuthenticated]
-    filterset_fields = ['user', 'action', 'model_name']
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login_view(request):
-    serializer = LoginSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def logout_view(request):
-    try:
-        refresh_token = request.data.get('refresh')
-        token = RefreshToken(refresh_token)
-        token.blacklist()
-        return Response({"detail": "Logout successful"}, status=status.HTTP_200_OK)
-    except Exception:
-        return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+class RoleViewSet(viewsets.ModelViewSet):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+    permission_classes = [IsAdminOrReadOnly]

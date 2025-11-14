@@ -1,20 +1,17 @@
 from rest_framework import permissions
 
-class IsHRManager(permissions.BasePermission):
-    """Allow only HR managers"""
+class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.role in ['hr_manager', 'admin']
-
-class IsManagerOrOwner(permissions.BasePermission):
-    """Allow managers or object owner"""
-    def has_object_permission(self, request, view, obj):
-        if request.user.role in ['admin', 'hr_manager']:
+        if request.method in permissions.SAFE_METHODS:
             return True
-        if hasattr(obj, 'employee'):
-            return obj.employee == request.user.employee
-        return False
+        return request.user and request.user.is_staff
 
-class CanApproveLeave(permissions.BasePermission):
-    """Check if user can approve leave"""
-    def has_permission(self, request, view):
-        return request.user.has_perm('accounts.approve_leave')
+class IsOwnerOrAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user and request.user.is_staff:
+            return True
+        
+        if hasattr(obj, 'user'):
+            return obj.user == request.user
+        
+        return obj == request.user

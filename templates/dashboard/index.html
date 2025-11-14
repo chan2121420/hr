@@ -1,296 +1,89 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Dashboard - HR System{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Dashboard - HRMaster{% endblock %}
 
 {% block content %}
-<div class="row g-4 mb-4">
-    
-    <!-- Stats Cards -->
-    <div class="col-md-3">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Total Employees</h6>
-                        <h2 class="card-title mb-0">{{ total_employees }}</h2>
-                    </div>
-                    <i class="bi bi-people fs-1 opacity-50"></i>
-                </div>
-                <small class="mt-2 d-block">
-                    <i class="bi bi-arrow-up"></i> 5% from last month
-                </small>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Active Tasks</h6>
-                        <h2 class="card-title mb-0">{{ active_tasks }}</h2>
-                    </div>
-                    <i class="bi bi-check-square fs-1 opacity-50"></i>
-                </div>
-                <small class="mt-2 d-block">
-                    {{ completed_today }} completed today
-                </small>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-warning text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Pending Leaves</h6>
-                        <h2 class="card-title mb-0">{{ pending_leaves }}</h2>
-                    </div>
-                    <i class="bi bi-calendar-event fs-1 opacity-50"></i>
-                </div>
-                <small class="mt-2 d-block">
-                    Requires approval
-                </small>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Avg Performance</h6>
-                        <h2 class="card-title mb-0">{{ avg_performance }}%</h2>
-                    </div>
-                    <i class="bi bi-graph-up fs-1 opacity-50"></i>
-                </div>
-                <small class="mt-2 d-block">
-                    <i class="bi bi-arrow-up"></i> 3% improvement
-                </small>
-            </div>
-        </div>
-    </div>
-    
-</div>
+<h1 class="h2 mb-4">Dashboard</h1>
 
-<div class="row g-4">
-    
-    <!-- Recent Tasks -->
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-check-square text-primary me-2"></i>
-                    Recent Tasks
-                </h5>
-                <a href="{% url 'task_list' %}" class="btn btn-sm btn-outline-primary">
-                    View All
-                </a>
-            </div>
+<div class="row" id="summary-cards">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-start-primary shadow h-100 py-2">
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    {% for task in recent_tasks %}
-                        <a href="{% url 'task_detail' task.id %}" 
-                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">{{ task.title }}</h6>
-                                <small class="text-muted">
-                                    Assigned to: {{ task.assigned_to.get_full_name }}
-                                </small>
-                            </div>
-                            <span class="badge 
-                                {% if task.status == 'completed' %}bg-success
-                                {% elif task.status == 'in_progress' %}bg-primary
-                                {% else %}bg-warning{% endif %}">
-                                {{ task.get_status_display }}
-                            </span>
-                        </a>
-                    {% empty %}
-                        <p class="text-muted text-center py-3">No recent tasks</p>
-                    {% endfor %}
+                <div class="row g-0 align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                            Active Employees</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800" id="total-employees">...</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Attendance Today -->
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-calendar-check text-success me-2"></i>
-                    Today's Attendance
-                </h5>
-                <a href="{% url 'attendance_list' %}" class="btn btn-sm btn-outline-primary">
-                    View All
-                </a>
-            </div>
-            <div class="card-body">
-                <div class="row text-center mb-3">
-                    <div class="col-4">
-                        <div class="p-3 bg-success bg-opacity-10 rounded">
-                            <h3 class="text-success mb-0">{{ attendance_present }}</h3>
-                            <small class="text-muted">Present</small>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="p-3 bg-danger bg-opacity-10 rounded">
-                            <h3 class="text-danger mb-0">{{ attendance_absent }}</h3>
-                            <small class="text-muted">Absent</small>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="p-3 bg-warning bg-opacity-10 rounded">
-                            <h3 class="text-warning mb-0">{{ attendance_late }}</h3>
-                            <small class="text-muted">Late</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div class="progress" style="height: 25px;">
-                    <div id="attendanceProgressBar" class="progress-bar bg-success" 
-                         role="progressbar" 
-                         style="width: 0%;" 
-                         data-attendance="{{ attendance_present_percentage }}">
-                        {{ attendance_present_percentage }}%
-                    </div>
-                </div>
-                <small class="text-muted mt-2 d-block text-center">
-                    Attendance Rate
-                </small>
-            </div>
-        </div>
     </div>
-    
-</div>
 
-<div class="row g-4 mt-2">
-    
-    <!-- Performance Chart -->
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up text-primary me-2"></i>
-                    Performance Trend
-                </h5>
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 fw-bold text-primary">Headcount by Department</h6>
             </div>
             <div class="card-body">
-                <canvas id="performanceChart" height="80"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Upcoming Events -->
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-calendar3 text-primary me-2"></i>
-                    Upcoming Events
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0">
-                        <div class="d-flex">
-                            <div class="flex-shrink-0">
-                                <div class="bg-primary text-white rounded p-2 text-center" style="width: 50px;">
-                                    <div class="fw-bold">15</div>
-                                    <small>Jan</small>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">Team Meeting</h6>
-                                <small class="text-muted">10:00 AM - Conference Room</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="list-group-item px-0">
-                        <div class="d-flex">
-                            <div class="flex-shrink-0">
-                                <div class="bg-success text-white rounded p-2 text-center" style="width: 50px;">
-                                    <div class="fw-bold">18</div>
-                                    <small>Jan</small>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">Training Session</h6>
-                                <small class="text-muted">2:00 PM - Training Hall</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="list-group-item px-0">
-                        <div class="d-flex">
-                            <div class="flex-shrink-0">
-                                <div class="bg-warning text-white rounded p-2 text-center" style="width: 50px;">
-                                    <div class="fw-bold">20</div>
-                                    <small>Jan</small>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">Performance Reviews</h6>
-                                <small class="text-muted">All Day</small>
-                            </div>
-                        </div>
-                    </div>
+                <div class="chart-pie pt-4" style="height: 300px;">
+                    <canvas id="headcountDeptChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
-    
-</div>
+    </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
-// Performance Chart
-const ctx = document.getElementById('performanceChart');
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [{
-            label: 'Overall Performance',
-            data: [75, 78, 82, 79, 85, 88],
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.1)',
-            tension: 0.4,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top'
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                max: 100
-            }
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDashboardData();
+    });
+
+    async function loadDashboardData() {
+        const token = localStorage.getItem('authToken');
+        const headers = {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+        };
+
+        try {
+            // Fetch summary data
+            const summaryResponse = await fetch('/api/analytics/summary/', { headers });
+            const summaryData = await summaryResponse.json();
+            document.getElementById('total-employees').textContent = summaryData.total_employees;
+            // ... populate other cards
+
+            // Fetch headcount data
+            const headcountResponse = await fetch('/api/analytics/headcount/', { headers });
+            const headcountData = await headcountResponse.json();
+            
+            // Render Pie Chart
+            new Chart(document.getElementById('headcountDeptChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: headcountData.by_department.map(d => d.key),
+                    datasets: [{
+                        data: headcountData.by_department.map(d => d.value),
+                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
         }
     }
-});
-document.addEventListener('DOMContentLoaded', function(){
-    var bar = document.getElementById('attendanceProgressBar');
-    if(bar){
-        var val = parseFloat(bar.getAttribute('data-attendance')) || 0;
-        bar.style.width = val + '%';
-        bar.textContent = Math.round(val) + '%';
-    }
-});
 </script>
-{% endblock %}
 {% endblock %}

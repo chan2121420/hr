@@ -1,64 +1,49 @@
 from rest_framework import serializers
-from .models import (
-    PayrollComponent, EmployeePayrollComponent, PayrollPeriod,
-    Payslip, PayslipComponent, LoanAdvance
-)
+from .models import SalaryComponent, EmployeeSalary, Payslip, PayslipEntry
 
-class PayrollComponentSerializer(serializers.ModelSerializer):
+class SalaryComponentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PayrollComponent
+        model = SalaryComponent
         fields = '__all__'
 
-class EmployeePayrollComponentSerializer(serializers.ModelSerializer):
-    component_name = serializers.CharField(source='component.name', read_only=True)
-    component_type = serializers.CharField(source='component.component_type', read_only=True)
+class EmployeeSalarySerializer(serializers.ModelSerializer):
+    component = serializers.StringRelatedField()
+    component_id = serializers.PrimaryKeyRelatedField(
+        queryset=SalaryComponent.objects.all(),
+        source='component',
+        write_only=True
+    )
     
     class Meta:
-        model = EmployeePayrollComponent
-        fields = '__all__'
+        model = EmployeeSalary
+        fields = ['id', 'component', 'component_id', 'amount']
 
-class PayrollPeriodSerializer(serializers.ModelSerializer):
-    processed_by_name = serializers.CharField(source='processed_by.get_full_name', read_only=True)
-    payslip_count = serializers.SerializerMethodField()
+class PayslipEntrySerializer(serializers.ModelSerializer):
+    component = serializers.StringRelatedField()
     
     class Meta:
-        model = PayrollPeriod
-        fields = '__all__'
-    
-    def get_payslip_count(self, obj):
-        return obj.payslips.count()
-
-class PayslipComponentSerializer(serializers.ModelSerializer):
-    component_name = serializers.CharField(source='component.name', read_only=True)
-    component_type = serializers.CharField(source='component.component_type', read_only=True)
-    
-    class Meta:
-        model = PayslipComponent
-        fields = ['id', 'component', 'component_name', 'component_type', 'amount']
+        model = PayslipEntry
+        fields = ['component', 'amount']
 
 class PayslipSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source='employee.get_full_name', read_only=True)
-    employee_id_display = serializers.CharField(source='employee.employee_id', read_only=True)
-    period_name = serializers.CharField(source='period.name', read_only=True)
-    components = PayslipComponentSerializer(many=True, read_only=True)
+    employee = serializers.StringRelatedField()
+    entries = PayslipEntrySerializer(many=True, read_only=True)
     
     class Meta:
         model = Payslip
         fields = [
-            'id', 'employee', 'employee_name', 'employee_id_display',
-            'period', 'period_name', 'basic_salary', 'total_working_days',
-            'days_worked', 'days_absent', 'total_earnings',
-            'total_deductions', 'paye_tax', 'nssa_employee',
-            'nssa_employer', 'gross_salary', 'net_salary', 'currency',
-            'is_paid', 'payment_date', 'payment_method',
-            'payment_reference', 'pdf_file', 'components', 'created_at'
+            'id', 
+            'employee', 
+            'pay_period_start', 
+            'pay_period_end', 
+            'status',
+            'gross_earnings',
+            'total_deductions',
+            'net_pay',
+            'generated_at',
+            'entries'
         ]
 
-class LoanAdvanceSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source='employee.get_full_name', read_only=True)
-    approved_by_name = serializers.CharField(source='approved_by.get_full_name', read_only=True)
-    balance = serializers.ReadOnlyField()
-    
-    class Meta:
-        model = LoanAdvance
-        fields = '__all__'
+class PayrollRunSerializer(serializers.Serializer):
+    month = serializers.IntegerField(min_value=1, max_value=12)
+    year = serializers.IntegerField(min_value=2020)

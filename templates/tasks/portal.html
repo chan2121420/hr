@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h2">My Tasks</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+            <i class="fas fa-plus me-1"></i> Create Task
+        </button>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">To-Do</h5>
+                </div>
+                <div class="card-body" id="task-list-TODO">
+                    </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">In Progress</h5>
+                </div>
+                <div class="card-body" id="task-list-IN_PROGRESS">
+                    </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Done</h5>
+                </div>
+                <div class="card-body" id="task-list-DONE">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTasks();
+    });
+
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Authorization': `Token ${token}` };
+
+    async function loadTasks() {
+        // This endpoint will only return tasks assigned to or created by the user
+        const response = await fetch('/api/tasks/tasks/', { headers });
+        const tasks = await response.json();
+        
+        // Clear columns
+        document.getElementById('task-list-TODO').innerHTML = '';
+        document.getElementById('task-list-IN_PROGRESS').innerHTML = '';
+        document.getElementById('task-list-DONE').innerHTML = '';
+
+        tasks.forEach(task => {
+            const container = document.getElementById(`task-list-${task.status}`);
+            if (container) {
+                container.innerHTML += createTaskCard(task);
+            }
+        });
+    }
+
+    function getPriorityBadge(priority) {
+        if (priority === 'HIGH') return 'bg-danger';
+        if (priority === 'MEDIUM') return 'bg-warning text-dark';
+        return 'bg-secondary';
+    }
+
+    function createTaskCard(task) {
+        let priorityBadge = getPriorityBadge(task.priority);
+        return `
+            <div class="card mb-2">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title mb-1">${task.title}</h6>
+                        <span class="badge ${priorityBadge}">${task.priority}</span>
+                    </div>
+                    <p class="card-text small text-muted">
+                        Due: ${task.due_date || 'N/A'}
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="updateTaskStatus(${task.id}, 'IN_PROGRESS')">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class.btn.btn-sm.btn-outline-success" onclick="updateTaskStatus(${task.id}, 'DONE')">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    async function updateTaskStatus(taskId, newStatus) {
+        const response = await fetch(`/api/tasks/tasks/${taskId}/`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        if (response.ok) {
+            loadTasks();
+        } else {
+            alert('Failed to update task status.');
+        }
+    }
+</script>
+{% endblock %}

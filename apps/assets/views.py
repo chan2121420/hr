@@ -1,39 +1,92 @@
-from rest_framework import viewsets, filters
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django_filters.rest_framework import DjangoFilterBackend
+from django.utils import timezone
+
 from .models import Asset, AssetCategory, AssetAssignment
-from .serializers import AssetSerializer, AssetCategorySerializer, AssetAssignmentSerializer
+from .serializers import (
+    AssetSerializer, 
+    AssetCategorySerializer, 
+    AssetAssignmentSerializer,
+    AssetCheckOutSerializer,
+    AssetCheckInSerializer
+)
+from .filters import AssetFilter
+from apps.employees.models import Employee
+from apps.accounts.permissions import IsAdminOrReadOnly
 
 class AssetCategoryViewSet(viewsets.ModelViewSet):
     queryset = AssetCategory.objects.all()
     serializer_class = AssetCategorySerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'description']
-    ordering_fields = ['name', 'created_at']
+    permission_classes = [IsAdminOrReadOnly]
 
 class AssetViewSet(viewsets.ModelViewSet):
-    queryset = Asset.objects.select_related('category')
+    queryset = Asset.objects.all().select_related(
+        'category', 
+        'current_employee__user'
+    ).prefetch_related('assignments')
     serializer_class = AssetSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'asset_tag', 'category__name', 'manufacturer', 'model', 'serial_number']
-    ordering_fields = ['asset_tag', 'name', 'created_at']
+    permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AssetFilter
 
-class AssetAssignmentViewSet(viewsets.ModelViewSet):
-    queryset = AssetAssignment.objects.select_related('asset', 'employee', 'assigned_by')
+    @action(detail=True, methods=['post'], serializer_class=AssetCheckOutSerializer)
+    def assign(self, request, pk=None):
+        asset = self.get_object()
+        serializer = AssetCheckOutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        if asset.status != 'IN_STOCK':
+            return Response(
+                {"error": "Asset is not available. Current status: " + asset.status}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            employee = Employee.objects.get(id=serializer.validated_data['employee_id'])
+        except Employee.DoesNotExist:
+            return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        asset.status = 'ASSIGNED'
+        asset.current_employee = employee
+        asset.save()
+        
+        AssetAssignment.objects.create(
+            asset=asset,
+            employee=employee,
+            assigned_by=request.user,
+            condition_out=serializer.validated_data.get('condition_out', '')
+        )
+        
+        return Response(AssetSerializer(asset).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], serializer_class=AssetCheckInSerializer)
+    def check_in(self, request, pk=None):
+        asset = self.get_object()
+        serializer = AssetCheckInSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        if asset.status != 'ASSIGNED':
+            return Response(
+                {"error": "Asset is not currently assigned."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        last_assignment = asset.assignments.first()
+        if last_assignment:
+            last_assignment.returned_date = timezone.now()
+            last_assignment.condition_in = serializer.validated_data['condition_in']
+            last_assignment.save()
+
+        asset.status = 'IN_STOCK'
+        asset.current_employee = None
+        asset.save()
+        
+        return Response(AssetSerializer(asset).data, status=status.HTTP_200_OK)
+
+class AssetAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AssetAssignment.objects.all()
     serializer_class = AssetAssignmentSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['asset__name', 'employee__first_name', 'employee__last_name', 'assigned_by__first_name', 'assigned_by__last_name']
-    ordering_fields = ['assigned_date', 'expected_return_date', 'created_at']
-
-    def get_queryset(self):
-        """Filter assignments by asset or employee via query params"""
-        queryset = super().get_queryset()
-        asset_id = self.request.query_params.get('asset')
-        employee_id = self.request.query_params.get('employee')
-        if asset_id:
-            queryset = queryset.filter(asset_id=asset_id)
-        if employee_id:
-            queryset = queryset.filter(employee_id=employee_id)
-        return queryset
+    permission_classes = [IsAdminUser]

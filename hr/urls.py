@@ -1,27 +1,26 @@
-# config/urls.py
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-router = DefaultRouter()
-
-# Register viewsets (you'll create these)
-from apps.employees.views import EmployeeViewSet
-from apps.tasks.views import TaskViewSet
-from apps.attendance.views import AttendanceViewSet
-from apps.leaves.views import LeaveRequestViewSet
-from apps.payroll.views import PayslipViewSet
-
-router.register('employees', EmployeeViewSet)
-router.register('tasks', TaskViewSet)
-router.register('attendance', AttendanceViewSet)
-router.register('leaves', LeaveRequestViewSet)
-router.register('payslips', PayslipViewSet)
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
-    path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-]
+    
+    path('', include('apps.core.urls')), 
+    
+    path('api/accounts/', include('apps.accounts.urls')),
+    path('api/employees/', include('apps.employees.urls')),
+    path('api/leaves/', include('apps.leaves.urls')),
+    path('api/attendance/', include('apps.attendance.urls')),
+    path('api/payroll/', include('apps.payroll.urls')),
+    path('api/performance/', include('apps.performance.urls')),
+    path('api/recruitment/', include('apps.recruitment.urls')),
+    path('api/training/', include('apps.training.urls')),
+    path('api/assets/', include('apps.assets.urls')),
+    path('api/tasks/', include('apps.tasks.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
+    path('api/analytics/', include('apps.analytics.urls')),
+    
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

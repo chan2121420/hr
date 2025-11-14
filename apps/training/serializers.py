@@ -1,29 +1,42 @@
 from rest_framework import serializers
-from .models import Course, TrainingSession, TrainingEnrollment
+from .models import TrainingCourse, CourseSession, Enrollment
+from apps.employees.models import Employee
 
-class CourseSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
+class TrainingCourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainingCourse
+        fields = ['id', 'title', 'description', 'provider']
+
+class CourseSessionSerializer(serializers.ModelSerializer):
+    course = serializers.StringRelatedField()
+    course_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainingCourse.objects.all(),
+        source='course',
+        write_only=True
+    )
     
     class Meta:
-        model = Course
-        fields = '__all__'
+        model = CourseSession
+        fields = ['id', 'course', 'course_id', 'start_date', 'end_date', 'location', 'instructor']
 
-class TrainingSessionSerializer(serializers.ModelSerializer):
-    course_title = serializers.CharField(source='course.title', read_only=True)
-    facilitator_name = serializers.CharField(source='facilitator.get_full_name', read_only=True)
-    enrollment_count = serializers.SerializerMethodField()
+class EnrollmentSerializer(serializers.ModelSerializer):
+    employee = serializers.StringRelatedField()
+    session = CourseSessionSerializer()
     
     class Meta:
-        model = TrainingSession
-        fields = '__all__'
-    
-    def get_enrollment_count(self, obj):
-        return obj.enrollments.count()
+        model = Enrollment
+        fields = ['id', 'employee', 'session', 'status', 'score', 'notes', 'enrolled_at']
 
-class TrainingEnrollmentSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source='employee.get_full_name', read_only=True)
-    session_title = serializers.CharField(source='session.title', read_only=True)
+class EnrollmentCreateSerializer(serializers.ModelSerializer):
+    employee_id = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.all(),
+        source='employee'
+    )
+    session_id = serializers.PrimaryKeyRelatedField(
+        queryset=CourseSession.objects.all(),
+        source='session'
+    )
     
     class Meta:
-        model = TrainingEnrollment
-        fields = '__all__'
+        model = Enrollment
+        fields = ['employee_id', 'session_id', 'status']

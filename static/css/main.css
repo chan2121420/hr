@@ -1,0 +1,80 @@
+/* Sidebar styles */
+#wrapper {
+    display: flex;
+}
+
+#sidebar-wrapper {
+    min-width: 250px;
+    max-width: 250px;
+    transition: margin 0.25s ease-out;
+}
+
+#page-content-wrapper {
+    min-width: calc(100vw - 250px);
+    width: 100%;
+}
+
+/* Toggled state */
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: -250px;
+}
+
+#wrapper.toggled #page-content-wrapper {
+    min-width: 100vw;
+}
+
+/* Sidebar link styling */
+.sidebar-heading {
+    font-size: 1.2rem;
+}
+
+.list-group-item {
+    padding: 0.75rem 1.25rem;
+    border: 0;
+}
+
+.list-group-item-action {
+    font-weight: 500;
+}
+.list-group-item-action:hover,
+.list-group-item-action:focus {
+    background-color: #343a40;
+    color: #fff;
+    opacity: 0.8;
+}
+
+/* === NEW UI POLISH STYLES === */
+
+/* Card border helpers (Fixed from your template) */
+.border-start-primary { border-left: .25rem solid #4e73df !important; }
+.border-start-success { border-left: .25rem solid #1cc88a !important; }
+.border-start-info { border-left: .25rem solid #36b9cc !important; }
+.border-start-warning { border-left: .25rem solid #f6c23e !important; }
+
+/* Consistent Card Header */
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    font-weight: 600;
+}
+
+/* Table polish */
+.table {
+    color: #5a5c69;
+}
+
+.table thead th {
+    background-color: #f8f9fc;
+    border-bottom: 2px solid #e3e6f0;
+    border-top: 0;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fc;
+}
+
+/* Modal polish */
+.modal-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}

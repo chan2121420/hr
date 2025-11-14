@@ -1,59 +1,25 @@
 from django.db import models
-from apps.core.models import TimeStampedModel
+from django.conf import settings
 
-class Notification(TimeStampedModel):
-    """System notifications"""
-    NOTIFICATION_TYPES = [
-        ('info', 'Information'),
-        ('success', 'Success'),
-        ('warning', 'Warning'),
-        ('error', 'Error'),
-        ('task', 'Task'),
-        ('leave', 'Leave'),
-        ('approval', 'Approval Required'),
-    ]
-    
-    recipient = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='notifications')
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
-    title = models.CharField(max_length=200)
+class Notification(models.Model):
+    class NotificationLevel(models.TextChoices):
+        INFO = 'INFO', 'Info'
+        SUCCESS = 'SUCCESS', 'Success'
+        WARNING = 'WARNING', 'Warning'
+        ERROR = 'ERROR', 'Error'
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='notifications'
+    )
     message = models.TextField()
-    
-    # Related object (generic)
-    related_model = models.CharField(max_length=100, blank=True)
-    related_object_id = models.CharField(max_length=100, blank=True)
-    action_url = models.CharField(max_length=500, blank=True)
-    
+    level = models.CharField(max_length=10, choices=NotificationLevel.choices, default=NotificationLevel.INFO)
     is_read = models.BooleanField(default=False)
-    read_at = models.DateTimeField(null=True, blank=True)
-    
-    # Email notification
-    email_sent = models.BooleanField(default=False)
-    email_sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.recipient.email} (Read: {self.is_read})"
     
     class Meta:
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['recipient', 'is_read']),
-            models.Index(fields=['-created_at']),
-        ]
-    
-    def __str__(self):
-        return f"{self.title} - {self.recipient.username}"
-
-class EmailTemplate(TimeStampedModel):
-    """Email templates for automated emails"""
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50, unique=True)
-    subject = models.CharField(max_length=300)
-    body = models.TextField()  # HTML content with template variables
-    
-    # Variables available (JSON list)
-    available_variables = models.JSONField(default=list)
-    
-    is_active = models.BooleanField(default=True)
-    
-    class Meta:
-        ordering = ['name']
-    
-    def __str__(self):
-        return self.name

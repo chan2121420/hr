@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Recruitment{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h2">Recruitment Portal</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">
+            <i class="fas fa-plus me-1"></i> Post New Job
+        </button>
+    </div>
+
+    <div class="row" id="job-postings-list">
+        <div class="col-12">
+            <p class="text-muted">Loading job postings...</p>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jobDetailsModalLabel">Job Title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6 class="text-muted">Candidate Pipeline</h6>
+                <div class="row">
+                    <div class="col">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-uppercase small">Applied</h6>
+                                <div id="stage-APPLIED"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-uppercase small">Screening</h6>
+                                <div id="stage-SCREENING"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-uppercase small">Interview</h6>
+                                <div id="stage-INTERVIEW"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-uppercase small">Offer</h6>
+                                <div id="stage-OFFER"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadJobs();
+    });
+
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Authorization': `Token ${token}` };
+
+    async function loadJobs() {
+        const response = await fetch('/api/recruitment/jobs/?status=OPEN', { headers });
+        const jobs = await response.json();
+        
+        const list = document.getElementById('job-postings-list');
+        list.innerHTML = ''; 
+
+        jobs.forEach(job => {
+            let item = `
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="card-title">${job.title}</h5>
+                                <span class="badge bg-primary">${job.application_count} Applications</span>
+                            </div>
+                            <h6 class="card-subtitle mb-2 text-muted">${job.department}</h6>
+                            <p class="card-text small">${job.description.substring(0, 100)}...</p>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewJobPipeline(${job.id}, '${job.title}')">
+                                View Pipeline
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            list.innerHTML += item;
+        });
+    }
+
+    async function viewJobPipeline(jobId, jobTitle) {
+        document.getElementById('jobDetailsModalLabel').textContent = jobTitle;
+        const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
+        
+        // Clear old data
+        document.getElementById('stage-APPLIED').innerHTML = '';
+        document.getElementById('stage-SCREENING').innerHTML = '';
+        document.getElementById('stage-INTERVIEW').innerHTML = '';
+        document.getElementById('stage-OFFER').innerHTML = '';
+        
+        const response = await fetch(`/api/recruitment/jobs/${jobId}/applications/`, { headers });
+        const applications = await response.json();
+        
+        applications.forEach(app => {
+            const container = document.getElementById(`stage-${app.stage}`);
+            if (container) {
+                container.innerHTML += `
+                    <div class="card my-2">
+                        <div class="card-body p-2">
+                            <p class="mb-0 small"><strong>${app.candidate.first_name} ${app.candidate.last_name}</strong></p>
+                            <p class="mb-0 small text-muted">${app.candidate.email}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        modal.show();
+    }
+</script>
+{% endblock %}
