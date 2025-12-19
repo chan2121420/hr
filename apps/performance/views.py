@@ -3,12 +3,12 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from .models import Goal, PerformanceReview
 from .serializers import GoalSerializer, PerformanceReviewSerializer
-from .permissions import IsOwnerOrManagerOrAdmin
+from rest_framework.permissions import IsAuthenticated
 
 class GoalViewSet(viewsets.ModelViewSet):
     queryset = Goal.objects.all().select_related('employee__user')
     serializer_class = GoalSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrManagerOrAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -22,27 +22,26 @@ class GoalViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        if self.request.user.is_staff:
-            serializer.save()
+        # If user is staff, they can set employee field, otherwise defaults to self
+        if self.request.user.is_staff and 'employee' in serializer.validated_data:
+            serializer.save(set_by=self.request.user.employee_profile)
         else:
-            serializer.save(employee=self.request.user.employee_profile)
+            serializer.save(
+                employee=self.request.user.employee_profile,
+                set_by=self.request.user.employee_profile
+            )
 
 class PerformanceReviewViewSet(viewsets.ModelViewSet):
-    queryset = PerformanceReview.objects.all().select_related(
-        'employee__user', 
-        'reviewer__user'
-    ).prefetch_related('goals_discussed')
+    queryset = PerformanceReview.objects.all()
     serializer_class = PerformanceReviewSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrManagerOrAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
             return PerformanceReview.objects.all()
-            
         employee = user.employee_profile
         return PerformanceReview.objects.filter(
             Q(employee=employee) | 
-            Q(employee__manager=employee) |
             Q(reviewer=employee)
         )

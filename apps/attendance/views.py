@@ -1,17 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.utils import timezone
 from .models import Shift, AttendanceRecord
-from .serializers import (
-    ShiftSerializer, 
-    AttendanceRecordSerializer, 
-    ClockInSerializer, 
-    ClockOutSerializer
-)
+from .serializers import AttendanceRecordSerializer, ShiftSerializer
 from .permissions import IsOwnerOrAdmin
-from apps.employees.models import Employee
 
 class ShiftViewSet(viewsets.ModelViewSet):
     queryset = Shift.objects.all()
@@ -50,8 +44,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         record.shift = employee.shift
         record.save()
         
-        serializer = AttendanceRecordSerializer(record)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(AttendanceRecordSerializer(record).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def clock_out(self, request):
@@ -81,8 +74,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         record.clock_out = timezone.now()
         record.save()
         
-        serializer = AttendanceRecordSerializer(record)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(AttendanceRecordSerializer(record).data)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def today(self, request):
@@ -91,8 +83,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         
         try:
             record = AttendanceRecord.objects.get(employee=employee, date=today)
-            serializer = AttendanceRecordSerializer(record)
-            return Response(serializer.data)
+            return Response(AttendanceRecordSerializer(record).data)
         except AttendanceRecord.DoesNotExist:
             return Response(
                 {"status": "NOT_STARTED", "clock_in": None, "clock_out": None},

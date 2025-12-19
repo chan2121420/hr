@@ -40,51 +40,55 @@ class AssetViewSet(viewsets.ModelViewSet):
         
         if asset.status != 'IN_STOCK':
             return Response(
-                {"error": "Asset is not available. Current status: " + asset.status}, 
+                {"error": f"Asset is not available. Current status: {asset.get_status_display()}"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
-        try:
-            employee = Employee.objects.get(id=serializer.validated_data['employee_id'])
-        except Employee.DoesNotExist:
-            return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        asset.status = 'ASSIGNED'
-        asset.current_employee = employee
-        asset.save()
         
+        employee_id = serializer.validated_data['employee_id']
+        try:
+            employee = Employee.objects.get(id=employee_id)
+        except Employee.DoesNotExist:
+            return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create Assignment Record
         AssetAssignment.objects.create(
             asset=asset,
             employee=employee,
             assigned_by=request.user,
-            condition_out=serializer.validated_data.get('condition_out', '')
+            assigned_date=timezone.now(),
+            condition_out=serializer.validated_data.get('condition_out', asset.condition)
         )
+
+        # Update Asset
+        asset.status = 'ASSIGNED'
+        asset.current_employee = employee
+        asset.save()
         
-        return Response(AssetSerializer(asset).data, status=status.HTTP_200_OK)
+        return Response(AssetSerializer(asset).data)
 
     @action(detail=True, methods=['post'], serializer_class=AssetCheckInSerializer)
-    def check_in(self, request, pk=None):
+    def return_asset(self, request, pk=None):
         asset = self.get_object()
         serializer = AssetCheckInSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        if asset.status != 'ASSIGNED':
-            return Response(
-                {"error": "Asset is not currently assigned."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        last_assignment = asset.assignments.first()
-        if last_assignment:
-            last_assignment.returned_date = timezone.now()
-            last_assignment.condition_in = serializer.validated_data['condition_in']
-            last_assignment.save()
 
+        if asset.status != 'ASSIGNED':
+            return Response({"error": "Asset is not currently assigned."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Close Assignment Record
+        assignment = asset.assignments.filter(return_date__isnull=True).first()
+        if assignment:
+            assignment.return_date = timezone.now()
+            assignment.condition_in = serializer.validated_data['condition_in']
+            assignment.save()
+
+        # Update Asset
         asset.status = 'IN_STOCK'
         asset.current_employee = None
+        asset.condition = serializer.validated_data['condition_in']
         asset.save()
-        
-        return Response(AssetSerializer(asset).data, status=status.HTTP_200_OK)
+
+        return Response(AssetSerializer(asset).data)
 
 class AssetAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AssetAssignment.objects.all()

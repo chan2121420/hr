@@ -55,7 +55,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         serializer = LeaveApprovalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        leave_request.status = LeaveRequest.LeaveStatus.APPROVED
+        leave_request.status = 'APPROVED'
         leave_request.reviewed_by = request.user.employee_profile
         leave_request.review_comments = serializer.validated_data.get('review_comments', 'Approved')
         leave_request.save()
@@ -76,7 +76,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         serializer = LeaveApprovalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        leave_request.status = LeaveRequest.LeaveStatus.REJECTED
+        leave_request.status = 'REJECTED'
         leave_request.reviewed_by = request.user.employee_profile
         leave_request.review_comments = serializer.validated_data.get('review_comments', 'Rejected')
         leave_request.save()

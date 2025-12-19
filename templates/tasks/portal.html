@@ -14,30 +14,67 @@
 
     <div class="row">
         <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-warning text-dark">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-secondary text-white">
                     <h5 class="mb-0">To-Do</h5>
                 </div>
-                <div class="card-body" id="task-list-TODO">
-                    </div>
+                <div class="card-body bg-light" id="task-list-TODO" style="min-height: 200px;"></div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm h-100">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">In Progress</h5>
                 </div>
-                <div class="card-body" id="task-list-IN_PROGRESS">
-                    </div>
+                <div class="card-body bg-light" id="task-list-IN_PROGRESS" style="min-height: 200px;"></div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm h-100">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0">Done</h5>
                 </div>
-                <div class="card-body" id="task-list-DONE">
+                <div class="card-body bg-light" id="task-list-DONE" style="min-height: 200px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTaskForm">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="taskTitle" required>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="taskDesc" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" id="taskPriority">
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="LOW">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" class="form-control" id="taskDueDate" required>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Create Task</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -48,71 +85,82 @@
         loadTasks();
     });
 
-    const token = localStorage.getItem('authToken');
-    const headers = { 'Authorization': `Token ${token}` };
+    document.getElementById('addTaskForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            title: document.getElementById('taskTitle').value,
+            description: document.getElementById('taskDesc').value,
+            priority: document.getElementById('taskPriority').value,
+            due_date: document.getElementById('taskDueDate').value,
+            // Defaults to 'TODO'
+            status: 'TODO' 
+        };
+
+        try {
+            await hrApi.post('tasks/tasks/', data);
+            bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+            document.getElementById('addTaskForm').reset();
+            loadTasks();
+            showToast('Task created successfully', 'success');
+        } catch (error) {
+            showToast(error.message, 'danger');
+        }
+    });
 
     async function loadTasks() {
-        // This endpoint will only return tasks assigned to or created by the user
-        const response = await fetch('/api/tasks/tasks/', { headers });
-        const tasks = await response.json();
-        
-        // Clear columns
-        document.getElementById('task-list-TODO').innerHTML = '';
-        document.getElementById('task-list-IN_PROGRESS').innerHTML = '';
-        document.getElementById('task-list-DONE').innerHTML = '';
+        try {
+            const tasks = await hrApi.get('tasks/tasks/');
+            
+            // Clear lists
+            ['TODO', 'IN_PROGRESS', 'DONE'].forEach(status => {
+                document.getElementById(`task-list-${status}`).innerHTML = '';
+            });
 
-        tasks.forEach(task => {
-            const container = document.getElementById(`task-list-${task.status}`);
-            if (container) {
-                container.innerHTML += createTaskCard(task);
-            }
-        });
-    }
-
-    function getPriorityBadge(priority) {
-        if (priority === 'HIGH') return 'bg-danger';
-        if (priority === 'MEDIUM') return 'bg-warning text-dark';
-        return 'bg-secondary';
-    }
-
-    function createTaskCard(task) {
-        let priorityBadge = getPriorityBadge(task.priority);
-        return `
-            <div class="card mb-2">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <h6 class="card-title mb-1">${task.title}</h6>
-                        <span class="badge ${priorityBadge}">${task.priority}</span>
+            tasks.forEach(task => {
+                const card = `
+                    <div class="card mb-2 shadow-sm border-start-${getPriorityColor(task.priority)}">
+                        <div class="card-body p-3">
+                            <h6 class="card-title d-flex justify-content-between">
+                                ${task.title}
+                                <small class="text-muted" style="font-size:0.7em">${task.priority}</small>
+                            </h6>
+                            <p class="card-text small text-muted mb-2">${task.description || ''}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-secondary"><i class="far fa-clock"></i> ${task.due_date}</small>
+                                <div class="btn-group">
+                                    ${task.status !== 'TODO' ? `<button class="btn btn-xs btn-outline-secondary" onclick="moveTask(${task.id}, 'TODO')">&laquo;</button>` : ''}
+                                    ${task.status !== 'IN_PROGRESS' ? `<button class="btn btn-xs btn-outline-primary" onclick="moveTask(${task.id}, 'IN_PROGRESS')">Doing</button>` : ''}
+                                    ${task.status !== 'DONE' ? `<button class="btn btn-xs btn-outline-success" onclick="moveTask(${task.id}, 'DONE')">&check;</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p class="card-text small text-muted">
-                        Due: ${task.due_date || 'N/A'}
-                    </p>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="updateTaskStatus(${task.id}, 'IN_PROGRESS')">
-                        <i class="fas fa-play"></i>
-                    </button>
-                    <button class.btn.btn-sm.btn-outline-success" onclick="updateTaskStatus(${task.id}, 'DONE')">
-                        <i class="fas fa-check"></i>
-                    </button>
-                </div>
-            </div>
-        `;
+                `;
+                
+                // Handle states that might not match exact IDs (e.g., REVIEW -> IN_PROGRESS col)
+                let targetId = `task-list-${task.status}`;
+                if (!document.getElementById(targetId)) targetId = 'task-list-TODO';
+                
+                document.getElementById(targetId).innerHTML += card;
+            });
+        } catch (error) {
+            console.error(error);
+        }
     }
 
-    async function updateTaskStatus(taskId, newStatus) {
-        const response = await fetch(`/api/tasks/tasks/${taskId}/`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Token ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: newStatus })
-        });
-
-        if (response.ok) {
+    async function moveTask(id, status) {
+        try {
+            await hrApi.patch(`tasks/tasks/${id}/`, { status: status });
             loadTasks();
-        } else {
-            alert('Failed to update task status.');
+        } catch (error) {
+            showToast(error.message, 'danger');
         }
+    }
+
+    function getPriorityColor(priority) {
+        if (priority === 'HIGH') return 'danger';
+        if (priority === 'MEDIUM') return 'primary';
+        return 'success';
     }
 </script>
 {% endblock %}

@@ -13,18 +13,18 @@
     </div>
 
     <div class="card shadow-sm mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">My Active Goals (KPIs)</h5>
+        <div class="card-header bg-white">
+            <h5 class="mb-0 text-primary">My Active Goals (KPIs)</h5>
         </div>
         <div class="card-body">
-            <div class="list-group" id="goal-list">
+            <div class="list-group list-group-flush" id="goal-list">
                 </div>
         </div>
     </div>
 
     <div class="card shadow-sm">
-        <div class="card-header">
-            <h5 class="mb-0">My Review History</h5>
+        <div class="card-header bg-white">
+            <h5 class="mb-0 text-secondary">My Review History</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -34,13 +34,39 @@
                             <th>Review Date</th>
                             <th>Reviewer</th>
                             <th>Status</th>
-                            <th>Rating (1-5)</th>
-                            <th>Actions</th>
+                            <th>Rating</th>
                         </tr>
                     </thead>
-                    <tbody id="review-table-body">
-                        </tbody>
+                    <tbody id="review-table-body"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addGoalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set New Goal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addGoalForm">
+                    <div class="mb-3">
+                        <label class="form-label">Goal Title</label>
+                        <input type="text" class="form-control" id="goalTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="goalDesc" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="goalDueDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Save Goal</button>
+                </form>
             </div>
         </div>
     </div>
@@ -52,63 +78,69 @@
         loadReviews();
     });
 
-    const token = localStorage.getItem('authToken');
-    const headers = { 'Authorization': `Token ${token}` };
+    document.getElementById('addGoalForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            title: document.getElementById('goalTitle').value,
+            description: document.getElementById('goalDesc').value,
+            due_date: document.getElementById('goalDueDate').value,
+            status: 'ACTIVE'
+        };
+        try {
+            await hrApi.post('performance/goals/', data);
+            bootstrap.Modal.getInstance(document.getElementById('addGoalModal')).hide();
+            loadGoals();
+            showToast('Goal added successfully', 'success');
+        } catch (error) {
+            showToast(error.message, 'danger');
+        }
+    });
 
     async function loadGoals() {
-        const response = await fetch('/api/performance/goals/?status=ACTIVE', { headers });
-        const goals = await response.json();
-        
-        const list = document.getElementById('goal-list');
-        list.innerHTML = ''; 
+        try {
+            const goals = await hrApi.get('performance/goals/');
+            const container = document.getElementById('goal-list');
+            container.innerHTML = '';
+            
+            if(goals.length === 0) {
+                container.innerHTML = '<div class="text-muted p-3">No active goals found.</div>';
+                return;
+            }
 
-        if (goals.length === 0) {
-            list.innerHTML = '<p class="text-muted">You have no active goals.</p>';
-        }
-
-        goals.forEach(goal => {
-            let item = `
-                <a href="#" class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">${goal.title}</h5>
-                        <small class="text-muted">Due: ${goal.due_date}</small>
+            goals.forEach(goal => {
+                const item = `
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">${goal.title}</div>
+                            ${goal.description}
+                        </div>
+                        <span class="badge bg-primary rounded-pill">${goal.status}</span>
+                        <small class="ms-3 text-muted">Due: ${goal.due_date}</small>
                     </div>
-                    <p class="mb-1">${goal.description}</p>
-                </a>
-            `;
-            list.innerHTML += item;
-        });
+                `;
+                container.innerHTML += item;
+            });
+        } catch (e) { console.error(e); }
     }
 
     async function loadReviews() {
-        const response = await fetch('/api/performance/reviews/', { headers });
-        const reviews = await response.json();
-        
-        const tableBody = document.getElementById('review-table-body');
-        tableBody.innerHTML = ''; 
+        try {
+            const reviews = await hrApi.get('performance/reviews/');
+            const tbody = document.getElementById('review-table-body');
+            tbody.innerHTML = '';
 
-        reviews.forEach(review => {
-            let row = `
-                <tr>
-                    <td><strong>${review.review_date}</strong></td>
-                    <td>${review.reviewer || 'N/A'}</td>
-                    <td><span class="badge bg-info">${review.status}</span></td>
-                    <td><strong>${review.overall_rating || 'N/A'}</strong></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewReview(${review.id})">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                    </td>
-                </tr>
-            `;
-            tableBody.innerHTML += row;
-        });
-    }
-
-    function viewReview(id) {
-        // This function would open a modal and fetch/display data
-        // from /api/performance/reviews/${id}/
-        alert(`Show details for review ${id}`);
+            reviews.forEach(review => {
+                const row = `
+                    <tr>
+                        <td>${review.review_date}</td>
+                        <td>${review.reviewer}</td>
+                        <td><span class="badge bg-secondary">${review.status}</span></td>
+                        <td>${review.overall_rating || '-'} / 5</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        } catch (e) { console.error(e); }
     }
 </script>
 {% endblock %}

@@ -17,11 +17,12 @@ class JobPositionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
+        # Public users/Employees only see OPEN jobs
         if not self.request.user.is_staff:
             return JobPosition.objects.filter(status='OPEN')
         return JobPosition.objects.all()
     
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
     def applications(self, request, pk=None):
         job = self.get_object()
         applications = job.applications.all().select_related('candidate')
@@ -34,28 +35,15 @@ class CandidateViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
 
 class ApplicationViewSet(viewsets.ModelViewSet):
-    queryset = Application.objects.all().select_related('candidate', 'job')
+    queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
+    # AllowAny for creating applications (external candidates)
+    # But restrict listing/viewing to Admins
     
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
         return [IsAdminUser()]
-
-    @action(detail=True, methods=['post'])
-    def advance(self, request, pk=None):
-        application = self.get_object()
-        new_stage = request.data.get('stage')
-        
-        if not new_stage in Application.ApplicationStage.labels:
-            return Response(
-                {"error": "Invalid stage."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        application.stage = new_stage
-        application.save()
-        return Response(ApplicationSerializer(application).data)
 
 class InterviewViewSet(viewsets.ModelViewSet):
     queryset = Interview.objects.all()

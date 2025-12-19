@@ -75,3 +75,25 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         
         serializer = BankDetailsSerializer(bank_details)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        try:
+            employee = request.user.employee_profile
+            serializer = self.get_serializer(employee)
+            return Response(serializer.data)
+        except Employee.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=404)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_team(self, request):
+        try:
+            employee = request.user.employee_profile
+            if not employee.department:
+                 return Response([])
+            # Get colleagues in same department, excluding self
+            team = Employee.objects.filter(department=employee.department, status='ACTIVE').exclude(id=employee.id)
+            serializer = EmployeeSerializer(team, many=True)
+            return Response(serializer.data)
+        except Employee.DoesNotExist:
+             return Response([])
