@@ -1,0 +1,308 @@
+INFO 2025-11-15 06:22:11,297 autoreload Watching for file changes with StatReloader
+INFO 2025-11-15 06:22:24,835 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:32:27,868 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:35:25,249 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:36:17,531 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:37:25,027 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:38:00,515 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 11:38:01,008 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:38:30,520 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 11:38:31,075 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:38:32,283 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 11:38:32,808 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:38:35,439 basehttp "GET / HTTP/1.1" 301 0
+INFO 2025-11-17 11:38:35,444 basehttp code 400, message Bad request version ('::\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x063')
+ERROR 2025-11-17 11:38:35,444 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:38:35,450 basehttp code 400, message Bad request version ('ô8yn\x9f²ë`Ðy\x11g3')
+ERROR 2025-11-17 11:38:35,451 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:38:40,655 basehttp code 400, message Bad request version ('ZÜÜ\x06P÷')
+ERROR 2025-11-17 11:38:40,655 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:38:40,656 basehttp code 400, message Bad request version ('êê\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06S')
+ERROR 2025-11-17 11:38:40,656 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:38:40,657 basehttp code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06')
+ERROR 2025-11-17 11:38:40,657 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:38:40,657 basehttp code 400, message Bad request version ('\x1a\x1a\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06\x93JJ\x00\x00\x00')
+ERROR 2025-11-17 11:38:40,657 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:39:11,301 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:39:14,420 basehttp code 400, message Bad request version ('r5óèÝ0RMÒkU\x95q«\x89\x8f\x9bj¼Ï')
+ERROR 2025-11-17 11:39:14,421 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:39:14,422 basehttp code 400, message Bad request syntax ('\x16\x03\x01\x06À\x01\x00\x06¼\x03\x03\x05îpöÕó(')
+ERROR 2025-11-17 11:39:14,422 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:45:28,288 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:45:31,333 basehttp code 400, message Bad request version ('.÷ä\x82ã\x05[ü±÷t{ÒLìáam\x92')
+ERROR 2025-11-17 11:45:31,334 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:45:31,343 basehttp code 400, message Bad request version (';{8,Î\x92\x12\xad£x')
+ERROR 2025-11-17 11:45:31,344 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:45:49,002 basehttp code 400, message Bad request version ('Ý\x060Î.ÆÓ\x05ÞÃ}\x18')
+ERROR 2025-11-17 11:45:49,003 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:45:49,003 basehttp code 400, message Bad request version ('«\x86\x06³\x89µ\x03pxBT\x89)££;Vü')
+ERROR 2025-11-17 11:45:49,004 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:48:07,938 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:48:11,498 basehttp code 400, message Bad request version ('\x9a\x9a\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06\x93**\x00\x00\x003\x04ï\x04íêê\x00\x01\x00\x11ì\x04ÀÂÖ\x13m\x87\x97·Ù\x89\x1b&o\x7f')
+ERROR 2025-11-17 11:48:11,499 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:48:11,500 basehttp code 400, message Bad request version ('§«O%\x00\x1b\x00\x03\x02\x00\x02\x00')
+ERROR 2025-11-17 11:48:11,500 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:49:34,992 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 11:49:36,783 basehttp "GET / HTTP/1.1" 301 0
+INFO 2025-11-17 11:49:36,791 basehttp code 400, message Bad request version ('\x00\x02\x01\x00\x00\x17\x00\x00\x00\x12\x00\x00DÍ\x00\x05\x00\x03\x02h2\x00+\x00\x07\x06úú\x03\x04\x03\x03\x00')
+ERROR 2025-11-17 11:49:36,791 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:49:36,793 basehttp code 400, message Bad request version ('cHÇ,R')
+ERROR 2025-11-17 11:49:36,793 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:49:39,909 basehttp code 400, message Bad request version ('ÊÊ\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x063\x1a\x1a\x00\x00\x00')
+ERROR 2025-11-17 11:49:39,909 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:49:39,910 basehttp code 400, message Bad request version ('\x19G=ýðLÁ§¤\x13H')
+INFO 2025-11-17 11:49:39,910 basehttp code 400, message Bad request version ('kXÍð%¦Jë4âlÊV1Jâ¤Ý,\x03ÕÆID\xad%ó¡(ÂH7\x00°¸.¤×:Yl\x88\x19L')
+ERROR 2025-11-17 11:49:39,910 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-11-17 11:49:39,910 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 11:49:39,911 basehttp code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01DÍ\x00\x05\x00\x03\x02h2\x00\x17\x00\x00\x00')
+ERROR 2025-11-17 11:49:39,911 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:00:13,621 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:00:56,850 basehttp code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x07\x00\x01\x00\x06ü\x03\x03í}½íI~Ý\x92Wñ')
+ERROR 2025-11-17 12:00:56,850 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:00:56,852 basehttp code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00')
+ERROR 2025-11-17 12:00:56,852 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:03:15,407 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:04:01,814 basehttp code 400, message Bad request version ('**\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x06\x93ªª\x00\x00\x00\x12\x00\x00\x00')
+ERROR 2025-11-17 12:04:01,815 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:04:01,817 basehttp code 400, message Bad request version ('Éé\x91\x811)\x00\x90\x04-\x12#ÈàUy9Çø')
+ERROR 2025-11-17 12:04:01,817 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:08:20,272 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 12:08:20,915 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:10:27,556 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 12:10:28,249 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:10:32,820 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:10:34,991 basehttp code 400, message Bad request version ('\x9a\x9a\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x063\x8a\x8a\x00\x00\x00-\x00\x02\x01\x01ÿ\x01\x00\x01\x00\x00')
+ERROR 2025-11-17 12:10:34,992 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:10:34,998 basehttp code 400, message Bad request version ('Z\x08Ï)ÅT\x8fìM½\x8cgÕvª\x07\x12\\I\x15Ç$Ü=½D\x13cÿ«"*M°ÙDÍ\x00\x05\x00\x03\x02h2\x003\x04ï\x04íÊÊ\x00\x01\x00\x11ì\x04ÀÜW\xad\x9a<\x91\x90')
+ERROR 2025-11-17 12:10:34,998 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:12:15,622 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 12:12:16,093 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 12:12:16,183 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:12:16,674 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:20:40,888 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 12:20:41,320 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:20:42,544 autoreload /home/chantel/Documents/hr_system/hr/settings.py changed, reloading.
+INFO 2025-11-17 12:20:42,968 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:28:26,526 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:28:27,039 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:28:37,225 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:28:37,595 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:30:03,115 autoreload /home/chantel/Documents/hr_system/apps/analytics/models.py changed, reloading.
+INFO 2025-11-17 12:30:03,565 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:30:15,748 autoreload /home/chantel/Documents/hr_system/apps/analytics/models.py changed, reloading.
+INFO 2025-11-17 12:30:16,113 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:30:39,357 autoreload /home/chantel/Documents/hr_system/apps/analytics/models.py changed, reloading.
+INFO 2025-11-17 12:30:39,738 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:30:40,877 autoreload /home/chantel/Documents/hr_system/apps/analytics/models.py changed, reloading.
+INFO 2025-11-17 12:30:41,249 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:31:03,500 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:31:03,858 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:31:45,026 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:31:47,153 basehttp code 400, message Bad request version ('s\x98fy#\x9bè\x08c:¾²\x84n)\x98\x92°i\x99\x8e\x91be£>ð£!ç\x90')
+ERROR 2025-11-17 12:31:47,153 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:31:47,155 basehttp code 400, message Bad request version ('a\x1b¶´[v\x922²)7z¡ó.³a%ë("\x0ff\x97yá¿\x02\x9b²f*\x90²d.«ã²¸q\x979\x9cÂ\x98âB\x98&·1\x80¡a\x18tºa\x97')
+ERROR 2025-11-17 12:31:47,156 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 12:54:26,646 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 12:54:26,655 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 12:54:27,408 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:54:27,408 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:54:29,689 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 12:54:29,689 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 12:54:30,301 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:54:30,325 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:54:31,562 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 12:54:31,584 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 12:54:32,023 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:54:32,031 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:55:10,633 autoreload /home/chantel/Documents/hr_system/apps/employees/models.py changed, reloading.
+INFO 2025-11-17 12:55:10,634 autoreload /home/chantel/Documents/hr_system/apps/employees/models.py changed, reloading.
+INFO 2025-11-17 12:55:11,112 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:55:11,114 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:55:43,689 autoreload /home/chantel/Documents/hr_system/apps/attendance/models.py changed, reloading.
+INFO 2025-11-17 12:55:43,690 autoreload /home/chantel/Documents/hr_system/apps/attendance/models.py changed, reloading.
+INFO 2025-11-17 12:55:44,180 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:55:44,181 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:56:31,888 autoreload /home/chantel/Documents/hr_system/apps/leaves/models.py changed, reloading.
+INFO 2025-11-17 12:56:31,890 autoreload /home/chantel/Documents/hr_system/apps/leaves/models.py changed, reloading.
+INFO 2025-11-17 12:56:32,499 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:56:32,522 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:57:59,650 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:57:59,654 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:58:00,142 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:58:00,151 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:58:12,533 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:58:12,533 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:58:13,182 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:58:13,213 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:58:23,587 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:58:23,599 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:58:24,147 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:58:24,192 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:58:28,432 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:58:28,470 autoreload /home/chantel/Documents/hr_system/apps/payroll/models.py changed, reloading.
+INFO 2025-11-17 12:58:29,036 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:58:29,059 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:05,625 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:05,627 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:06,119 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:06,126 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:12,269 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:12,270 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:12,845 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:12,871 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:13,980 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:13,999 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:14,417 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:14,420 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:24,588 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:24,589 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:25,186 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:25,202 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:26,354 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:26,352 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:26,842 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:26,844 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:28,986 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:28,990 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 12:59:29,457 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 12:59:29,458 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:00:34,905 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 13:00:34,905 autoreload /home/chantel/Documents/hr_system/apps/assets/models.py changed, reloading.
+INFO 2025-11-17 13:00:35,318 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:00:35,318 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:02:39,896 autoreload /home/chantel/Documents/hr_system/apps/performance/models.py changed, reloading.
+INFO 2025-11-17 13:02:39,897 autoreload /home/chantel/Documents/hr_system/apps/performance/models.py changed, reloading.
+INFO 2025-11-17 13:02:40,383 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:02:40,386 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:03:25,187 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:03:25,191 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:03:25,653 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:03:25,653 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:03:35,838 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:03:35,842 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:03:36,434 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:03:36,435 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:11,992 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:11,997 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:12,605 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:12,614 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:13,843 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:13,846 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:14,302 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:14,302 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:16,445 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:16,445 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:16,927 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:16,935 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:40,196 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:40,199 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:04:40,599 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:04:40,599 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:04,631 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:04,633 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:05,190 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:05,190 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:06,433 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:06,435 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:06,895 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:06,896 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:27,342 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:27,344 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:27,891 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:27,894 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:29,027 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:29,031 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:29,455 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:29,465 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:39,615 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:39,632 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:06:40,088 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:06:40,114 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:07:17,415 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:07:17,438 autoreload /home/chantel/Documents/hr_system/apps/recruitment/models.py changed, reloading.
+INFO 2025-11-17 13:07:17,815 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:07:17,832 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:09:31,486 autoreload /home/chantel/Documents/hr_system/apps/tasks/models.py changed, reloading.
+INFO 2025-11-17 13:09:31,487 autoreload /home/chantel/Documents/hr_system/apps/tasks/models.py changed, reloading.
+INFO 2025-11-17 13:09:32,096 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:09:32,098 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:10:23,922 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:10:23,924 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:10:24,392 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:10:24,392 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:10:26,530 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:10:26,530 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:10:27,060 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:10:27,063 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:10:44,272 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:10:44,273 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:10:44,679 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:10:44,683 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:00,861 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:00,862 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:01,353 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:01,358 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:34,918 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:34,922 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:35,375 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:35,388 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:43,556 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:43,557 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:44,003 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:44,014 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:54,371 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:54,372 autoreload /home/chantel/Documents/hr_system/apps/training/models.py changed, reloading.
+INFO 2025-11-17 13:11:54,944 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:11:54,945 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:48,353 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:48,354 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:48,809 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:48,809 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:51,963 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:51,964 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:52,381 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:52,385 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:55,537 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:55,542 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:55,971 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:55,972 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:59,231 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:59,233 autoreload /home/chantel/Documents/hr_system/apps/notifications/models.py changed, reloading.
+INFO 2025-11-17 13:13:59,701 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:13:59,701 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:18,156 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:18,157 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:18,619 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:18,620 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:22,907 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:22,908 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:23,527 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:23,532 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:26,793 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:26,799 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:27,330 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:27,330 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:31,591 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:31,598 autoreload /home/chantel/Documents/hr_system/apps/accounts/models.py changed, reloading.
+INFO 2025-11-17 13:14:32,150 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:14:32,157 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:19:24,528 basehttp code 400, message Bad request version ('zz\x13\x01\x13\x02\x13\x03À+À/À,À0Ì©Ì¨À\x13À\x14\x00\x9c\x00\x9d\x00/\x005\x01\x00\x063êê\x00\x00\x00')
+ERROR 2025-11-17 13:19:24,532 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 13:19:24,534 basehttp code 400, message Bad request version ('ö\x9aÊ\x05kK)\x89\x82\x00#\x00\x00\x00\x05\x00\x05\x01\x00\x00\x00\x00ÿ\x01\x00\x01\x00\x00')
+ERROR 2025-11-17 13:19:24,534 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-11-17 13:23:01,960 autoreload /home/chantel/Documents/hr_system/apps/leaves/models.py changed, reloading.
+INFO 2025-11-17 13:23:02,397 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:23:17,782 autoreload /home/chantel/Documents/hr_system/apps/leaves/models.py changed, reloading.
+INFO 2025-11-17 13:23:18,297 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 13:23:40,841 autoreload /home/chantel/Documents/hr_system/apps/leaves/models.py changed, reloading.
+INFO 2025-11-17 13:23:41,312 autoreload Watching for file changes with StatReloader
+INFO 2025-11-28 12:46:40,402 autoreload Watching for file changes with StatReloader
+INFO 2025-12-19 14:05:46,690 autoreload Watching for file changes with StatReloader
+INFO 2025-12-19 14:06:23,360 autoreload Watching for file changes with StatReloader
+INFO 2025-12-19 14:06:45,941 autoreload Watching for file changes with StatReloader
+INFO 2025-12-19 14:07:58,338 autoreload Watching for file changes with StatReloader
+INFO 2025-12-19 14:08:06,532 basehttp "GET / HTTP/1.1" 301 0
+INFO 2025-12-19 14:08:06,536 basehttp code 400, message Bad request version ('I<')
+ERROR 2025-12-19 14:08:06,536 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-12-19 14:08:06,537 basehttp code 400, message Bad request version ('"[§Ðj[ètcdBÿ\x13\'Êd!!\x81·\x02S¿Y;>ÕfLÐã·R0J\x84\x87Wª(p\x9e')
+ERROR 2025-12-19 14:08:06,537 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.

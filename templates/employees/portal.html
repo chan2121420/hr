@@ -1,0 +1,708 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Employee Self-Service Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Welcome Banner -->
+    <div class="welcome-banner mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">Welcome back, <span id="employee-name">--</span>!</h1>
+                <p class="lead text-muted mb-0">Here's your personalized dashboard</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="quick-actions">
+                    <button class="btn btn-primary btn-lg" onclick="clockInOut()">
+                        <i class="fas fa-clock me-2"></i><span id="clock-action">Clock In</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-primary">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="metric-content">
+                    <h6 class="text-muted mb-1">This Month's Salary</h6>
+                    <h3 class="mb-0" id="current-salary">$--</h3>
+                    <small class="text-success"><i class="fas fa-arrow-up me-1"></i>Payment due in <span id="days-to-payday">--</span> days</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-success">
+                    <i class="fas fa-plane-departure"></i>
+                </div>
+                <div class="metric-content">
+                    <h6 class="text-muted mb-1">Leave Balance</h6>
+                    <h3 class="mb-0" id="leave-balance">--</h3>
+                    <small class="text-muted">days available</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-content">
+                    <h6 class="text-muted mb-1">Hours This Week</h6>
+                    <h3 class="mb-0" id="weekly-hours">--</h3>
+                    <small class="text-muted">of 40 hours</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-info">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="metric-content">
+                    <h6 class="text-muted mb-1">Pending Tasks</h6>
+                    <h3 class="mb-0" id="pending-tasks">--</h3>
+                    <small class="text-muted">require attention</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Today's Schedule -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar-day me-2"></i>Today's Schedule</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline" id="today-schedule">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+                    <a href="#" class="text-primary small">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="activity-feed" id="recent-activity">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Directory -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>My Team</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3" id="team-members">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action" onclick="requestLeave()">
+                            <i class="fas fa-plane-departure text-primary me-3"></i>
+                            Request Leave
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="viewPayslips()">
+                            <i class="fas fa-file-invoice-dollar text-success me-3"></i>
+                            View Payslips
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="updateProfile()">
+                            <i class="fas fa-user-edit text-info me-3"></i>
+                            Update Profile
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="requestAdvance()">
+                            <i class="fas fa-hand-holding-usd text-warning me-3"></i>
+                            Request Salary Advance
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="viewBenefits()">
+                            <i class="fas fa-gift text-danger me-3"></i>
+                            My Benefits
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="submitException()">
+                            <i class="fas fa-exclamation-circle text-secondary me-3"></i>
+                            Report Issue
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Events -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Upcoming Events</h5>
+                </div>
+                <div class="card-body">
+                    <div id="upcoming-events">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Snapshot -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <canvas id="performance-chart" width="200" height="200"></canvas>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Goals Completed</span>
+                        <strong id="goals-completed">0/0</strong>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-success" id="goals-progress" style="width: 0%"></div>
+                    </div>
+                    <a href="#" class="btn btn-outline-primary btn-sm w-100">View Details</a>
+                </div>
+            </div>
+
+            <!-- Birthday & Announcements -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-birthday-cake me-2"></i>Celebrations</h5>
+                </div>
+                <div class="card-body">
+                    <div id="celebrations">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Leave Modal -->
+<div class="modal fade" id="leaveRequestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plane-departure me-2"></i>Request Leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="leaveRequestForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Leave Type</label>
+                            <select class="form-select" id="leave_type" required>
+                                <option value="">Select type...</option>
+                            </select>
+                            <small class="text-muted">Available: <span id="available-days">--</span> days</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Duration</label>
+                            <select class="form-select" id="duration_type">
+                                <option value="full">Full Day(s)</option>
+                                <option value="half">Half Day</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <textarea class="form-control" id="reason" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Covering Employee (Optional)</label>
+                        <select class="form-select" id="covering_employee">
+                            <option value="">Select colleague...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Handover Notes</label>
+                        <textarea class="form-control" id="handover_notes" rows="2" placeholder="Briefly describe work handover arrangements..."></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Your request will be sent to your manager for approval.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Salary Advance Modal -->
+<div class="modal fade" id="advanceRequestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-hand-holding-usd me-2"></i>Request Salary Advance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="advanceRequestForm">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Maximum advance: <strong>50%</strong> of your monthly salary
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount Requested (USD)</label>
+                        <input type="number" class="form-control" id="advance_amount" required min="1" step="0.01">
+                        <small class="text-muted">Your monthly salary: $<span id="monthly-salary">--</span></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Repayment Period</label>
+                        <select class="form-select" id="repayment_months" required>
+                            <option value="1">1 Month</option>
+                            <option value="2">2 Months</option>
+                            <option value="3" selected>3 Months</option>
+                            <option value="6">6 Months</option>
+                        </select>
+                        <small class="text-muted">Monthly deduction: $<span id="monthly-deduction">0.00</span></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Advance</label>
+                        <textarea class="form-control" id="advance_reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadEmployeeDashboard();
+    setInterval(updateLiveClock, 1000);
+});
+
+async function loadEmployeeDashboard() {
+    try {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        document.getElementById('employee-name').textContent = userData.first_name;
+        
+        await Promise.all([
+            loadMetrics(),
+            loadTodaySchedule(),
+            loadRecentActivity(),
+            loadTeamMembers(),
+            loadUpcomingEvents(),
+            loadCelebrations(),
+            loadPerformanceData()
+        ]);
+    } catch (error) {
+        console.error('Failed to load dashboard:', error);
+        showToast('Failed to load dashboard data', 'danger');
+    }
+}
+
+async function loadMetrics() {
+    try {
+        // Load current salary
+        const payslips = await hrApi.get('payroll/payslips/');
+        if (payslips.length > 0) {
+            document.getElementById('current-salary').textContent = 
+                `$${parseFloat(payslips[0].net_pay).toFixed(2)}`;
+        }
+        
+        // Calculate days to payday (25th of each month)
+        const today = new Date();
+        const payday = new Date(today.getFullYear(), today.getMonth(), 25);
+        if (today.getDate() > 25) {
+            payday.setMonth(payday.getMonth() + 1);
+        }
+        const daysTo = Math.ceil((payday - today) / (1000 * 60 * 60 * 24));
+        document.getElementById('days-to-payday').textContent = daysTo;
+        
+        // Load leave balance
+        document.getElementById('leave-balance').textContent = '15.5';
+        
+        // Load weekly hours
+        document.getElementById('weekly-hours').textContent = '32.5';
+        
+        // Load pending tasks
+        const tasks = await hrApi.get('tasks/tasks/?status=TODO');
+        document.getElementById('pending-tasks').textContent = tasks.length;
+        
+    } catch (error) {
+        console.error('Failed to load metrics:', error);
+    }
+}
+
+async function loadTodaySchedule() {
+    const schedule = document.getElementById('today-schedule');
+    schedule.innerHTML = `
+        <div class="timeline-item">
+            <div class="timeline-marker bg-primary"></div>
+            <div class="timeline-content">
+                <h6 class="mb-1">8:00 AM - Team Standup</h6>
+                <p class="text-muted small mb-0">Conference Room A</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-marker bg-success"></div>
+            <div class="timeline-content">
+                <h6 class="mb-1">10:00 AM - Project Review</h6>
+                <p class="text-muted small mb-0">Online Meeting</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-marker bg-warning"></div>
+            <div class="timeline-content">
+                <h6 class="mb-1">2:00 PM - Client Presentation</h6>
+                <p class="text-muted small mb-0">Board Room</p>
+            </div>
+        </div>
+    `;
+}
+
+async function loadRecentActivity() {
+    const activity = document.getElementById('recent-activity');
+    activity.innerHTML = `
+        <div class="activity-item">
+            <i class="fas fa-check-circle text-success"></i>
+            <div>
+                <p class="mb-1">Completed task: <strong>Q4 Report</strong></p>
+                <small class="text-muted">2 hours ago</small>
+            </div>
+        </div>
+        <div class="activity-item">
+            <i class="fas fa-plane text-primary"></i>
+            <div>
+                <p class="mb-1">Leave request approved</p>
+                <small class="text-muted">Yesterday</small>
+            </div>
+        </div>
+        <div class="activity-item">
+            <i class="fas fa-file text-info"></i>
+            <div>
+                <p class="mb-1">Payslip generated for October</p>
+                <small class="text-muted">3 days ago</small>
+            </div>
+        </div>
+    `;
+}
+
+async function loadTeamMembers() {
+    const container = document.getElementById('team-members');
+    // Mock data - replace with actual API call
+    const team = [
+        {name: 'John Manager', role: 'Team Lead', avatar: 'JM'},
+        {name: 'Sarah Colleague', role: 'Developer', avatar: 'SC'},
+        {name: 'Mike Partner', role: 'Designer', avatar: 'MP'},
+    ];
+    
+    container.innerHTML = team.map(member => `
+        <div class="col-md-4">
+            <div class="team-card text-center">
+                <div class="team-avatar">${member.avatar}</div>
+                <h6 class="mb-0 mt-2">${member.name}</h6>
+                <small class="text-muted">${member.role}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadUpcomingEvents() {
+    const events = document.getElementById('upcoming-events');
+    events.innerHTML = `
+        <div class="event-item">
+            <div class="event-date">
+                <span class="day">25</span>
+                <span class="month">Nov</span>
+            </div>
+            <div>
+                <h6 class="mb-1">Payday</h6>
+                <small class="text-muted">Monthly Salary Payment</small>
+            </div>
+        </div>
+        <div class="event-item">
+            <div class="event-date">
+                <span class="day">22</span>
+                <span class="month">Dec</span>
+            </div>
+            <div>
+                <h6 class="mb-1">Public Holiday</h6>
+                <small class="text-muted">Unity Day</small>
+            </div>
+        </div>
+    `;
+}
+
+async function loadCelebrations() {
+    const celebrations = document.getElementById('celebrations');
+    celebrations.innerHTML = `
+        <div class="celebration-item">
+            <i class="fas fa-birthday-cake text-warning"></i>
+            <div>
+                <p class="mb-0"><strong>Sarah's Birthday</strong> today! 🎉</p>
+                <small class="text-muted">Finance Department</small>
+            </div>
+        </div>
+        <div class="celebration-item">
+            <i class="fas fa-trophy text-success"></i>
+            <div>
+                <p class="mb-0"><strong>Work Anniversary</strong></p>
+                <small class="text-muted">John - 5 years with us!</small>
+            </div>
+        </div>
+    `;
+}
+
+async function loadPerformanceData() {
+    // Simple performance chart
+    const ctx = document.getElementById('performance-chart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'In Progress', 'Pending'],
+                datasets: [{
+                    data: [65, 25, 10],
+                    backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+    
+    document.getElementById('goals-completed').textContent = '7/10';
+    document.getElementById('goals-progress').style.width = '70%';
+}
+
+function updateLiveClock() {
+    // Update any live time displays
+}
+
+function clockInOut() {
+    // Implement clock in/out
+    showToast('Feature coming soon!', 'info');
+}
+
+function requestLeave() {
+    new bootstrap.Modal(document.getElementById('leaveRequestModal')).show();
+}
+
+function requestAdvance() {
+    new bootstrap.Modal(document.getElementById('advanceRequestModal')).show();
+}
+
+function viewPayslips() {
+    window.location.href = '/payroll/';
+}
+
+function updateProfile() {
+    window.location.href = '/profile/';
+}
+
+function viewBenefits() {
+    showToast('Benefits portal coming soon!', 'info');
+}
+
+function submitException() {
+    showToast('Issue reporting coming soon!', 'info');
+}
+
+// Calculate monthly deduction for salary advance
+document.getElementById('advance_amount')?.addEventListener('input', calculateAdvance);
+document.getElementById('repayment_months')?.addEventListener('change', calculateAdvance);
+
+function calculateAdvance() {
+    const amount = parseFloat(document.getElementById('advance_amount').value) || 0;
+    const months = parseInt(document.getElementById('repayment_months').value) || 1;
+    const deduction = (amount / months).toFixed(2);
+    document.getElementById('monthly-deduction').textContent = deduction;
+}
+</script>
+
+<style>
+.welcome-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 4px currentColor;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 20px;
+    bottom: -10px;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.activity-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item i {
+    font-size: 1.5rem;
+}
+
+.team-card {
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.team-card:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.team-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin: 0 auto;
+}
+
+.event-item,
+.celebration-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.event-item:last-child,
+.celebration-item:last-child {
+    border-bottom: none;
+}
+
+.event-date {
+    text-align: center;
+    padding: 0.5rem;
+    background: #f8f9fc;
+    border-radius: 8px;
+    min-width: 60px;
+}
+
+.event-date .day {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.event-date .month {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #858796;
+}
+</style>
+{% endblock %}
