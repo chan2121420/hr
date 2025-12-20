@@ -1,148 +1,692 @@
-{% extends "base.html" %}
-{% load static %}
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block title %}My Attendance{% endblock %}
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
 
-{% block content %}
-<div class="container p-4">
-    <h1 class="h2 mb-4">My Attendance Portal</h1>
+        .container-main {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow-lg text-center border-0">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Today: {% now "l, j F Y" %}</h5>
+        .clock-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .current-time {
+            font-size: 4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .current-date {
+            font-size: 1.5rem;
+            color: #6B7280;
+            margin-bottom: 2rem;
+        }
+
+        .clock-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .clock-btn {
+            padding: 1.5rem 3rem;
+            border: none;
+            border-radius: 20px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            min-width: 200px;
+        }
+
+        .clock-btn-in {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .clock-btn-in:hover:not(:disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 36px rgba(16, 185, 129, 0.4);
+        }
+
+        .clock-btn-out {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+        }
+
+        .clock-btn-out:hover:not(:disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 36px rgba(239, 68, 68, 0.4);
+        }
+
+        .clock-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active {
+            background: #10B981;
+        }
+
+        .status-dot.inactive {
+            background: #6B7280;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-item {
+            background: #F9FAFB;
+            padding: 1.5rem;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            color: #6B7280;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1F2937;
+        }
+
+        .info-value.highlight {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .history-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .history-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1F2937;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #F3F4F6;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: #F9FAFB;
+            transform: translateX(5px);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-date {
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .history-time {
+            font-size: 0.9rem;
+            color: #6B7280;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.present {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-badge.late {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-badge.absent {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .break-btn {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .break-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .modal-custom {
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .modal-custom .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            .current-time {
+                font-size: 3rem;
+            }
+            
+            .clock-buttons {
+                flex-direction: column;
+            }
+            
+            .clock-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-main">
+        <!-- Clock Card -->
+        <div class="clock-card">
+            <div class="current-time" id="current-time">--:--:--</div>
+            <div class="current-date" id="current-date">Loading...</div>
+            
+            <div class="status-indicator">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Not Clocked In</span>
+            </div>
+            
+            <div class="clock-buttons">
+                <button class="clock-btn clock-btn-in" id="clock-in-btn" onclick="clockIn()">
+                    <i class="fas fa-sign-in-alt me-2"></i>Clock In
+                </button>
+                <button class="clock-btn clock-btn-out" id="clock-out-btn" onclick="clockOut()" disabled>
+                    <i class="fas fa-sign-out-alt me-2"></i>Clock Out
+                </button>
+            </div>
+            
+            <button class="break-btn" id="break-btn" onclick="toggleBreak()" disabled>
+                <i class="fas fa-coffee me-2"></i><span id="break-text">Start Break</span>
+            </button>
+        </div>
+
+        <!-- Today's Info -->
+        <div class="status-card">
+            <h3 class="mb-4"><i class="fas fa-calendar-day me-2"></i>Today's Attendance</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Clock In Time</div>
+                    <div class="info-value" id="clock-in-time">--:--</div>
                 </div>
-                <div class="card-body p-5">
-                    <h2 class="display-4 fw-bold text-dark" id="currentTime">--:--:-- --</h2>
-                    <p class="lead text-muted" id="attendanceStatus">Loading status...</p>
-                    
-                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
-                        <button class="btn btn-success btn-lg px-4 gap-3" id="clockInButton" disabled>
-                            <i class="fas fa-sign-in-alt me-1"></i> Clock In
-                        </button>
-                        <button class="btn btn-danger btn-lg px-4" id="clockOutButton" disabled>
-                            <i class="fas fa-sign-out-alt me-1"></i> Clock Out
+                <div class="info-item">
+                    <div class="info-label">Clock Out Time</div>
+                    <div class="info-value" id="clock-out-time">--:--</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Work Hours</div>
+                    <div class="info-value highlight" id="work-hours">0.00</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Break Time</div>
+                    <div class="info-value" id="break-time">0 min</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent History -->
+            <div class="col-lg-8">
+                <div class="history-card">
+                    <div class="history-header">
+                        <h3 class="history-title"><i class="fas fa-history me-2"></i>Recent Attendance</h3>
+                        <button class="btn btn-outline-primary" onclick="viewAllHistory()">
+                            View All
                         </button>
                     </div>
-                    
-                    <div id="clockedInTime" class="mt-3 small text-success fw-bold"></div>
-                    <div id="clockedOutTime" class="mt-2 small text-danger fw-bold"></div>
+                    <div id="attendance-history">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary"></div>
+                            <p class="mt-2">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Stats -->
+            <div class="col-lg-4">
+                <div class="status-card">
+                    <h4 class="mb-3"><i class="fas fa-chart-bar me-2"></i>This Month</h4>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #10B981, #059669);">
+                            <div class="stat-value" id="present-days">0</div>
+                            <div class="stat-label">Present Days</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
+                            <div class="stat-value" id="late-days">0</div>
+                            <div class="stat-label">Late Arrivals</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">
+                            <div class="stat-value" id="total-hours">0h</div>
+                            <div class="stat-label">Total Hours</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);">
+                            <div class="stat-value" id="attendance-rate">0%</div>
+                            <div class="stat-label">Attendance</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row justify-content-center mt-5">
-        <div class="col-lg-10">
-            <h3 class="mb-3">Recent History</h3>
-            <div class="card shadow-sm border-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Clock In</th>
-                                <th>Clock Out</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-table-body">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = '/api/attendance';
+        let todayRecord = null;
+        let onBreak = false;
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        updateTime();
-        setInterval(updateTime, 1000);
-        loadTodayStatus();
-        loadHistory();
-    });
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadTodayAttendance();
+            loadRecentHistory();
+            loadMonthlyStats();
+        });
 
-    const clockInBtn = document.getElementById('clockInButton');
-    const clockOutBtn = document.getElementById('clockOutButton');
-    const statusText = document.getElementById('attendanceStatus');
-
-    function updateTime() {
-        document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
-    }
-
-    async function loadTodayStatus() {
-        try {
-            const data = await hrApi.get('attendance/records/today/');
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour12: false });
+            const date = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
             
-            if (data.status === 'NOT_STARTED') {
-                statusText.textContent = "You have not clocked in today.";
+            document.getElementById('current-time').textContent = time;
+            document.getElementById('current-date').textContent = date;
+        }
+
+        async function loadTodayAttendance() {
+            try {
+                const response = await fetch(`${API_URL}/records/today/`, {
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.ok) {
+                    todayRecord = await response.json();
+                    updateUIWithTodayData(todayRecord);
+                } else {
+                    updateUIWithTodayData(null);
+                }
+            } catch (error) {
+                console.error('Failed to load today attendance:', error);
+            }
+        }
+
+        function updateUIWithTodayData(record) {
+            const clockInBtn = document.getElementById('clock-in-btn');
+            const clockOutBtn = document.getElementById('clock-out-btn');
+            const breakBtn = document.getElementById('break-btn');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            
+            if (!record || !record.clock_in) {
+                // Not clocked in
                 clockInBtn.disabled = false;
                 clockOutBtn.disabled = true;
-            } else if (data.clock_in && !data.clock_out) {
-                statusText.textContent = "You are currently clocked in.";
-                document.getElementById('clockedInTime').textContent = `Clocked In: ${new Date(data.clock_in).toLocaleTimeString()}`;
-                clockInBtn.disabled = true;
-                clockOutBtn.disabled = false;
-            } else if (data.clock_in && data.clock_out) {
-                statusText.textContent = "You have completed your day.";
-                document.getElementById('clockedInTime').textContent = `Clocked In: ${new Date(data.clock_in).toLocaleTimeString()}`;
-                document.getElementById('clockedOutTime').textContent = `Clocked Out: ${new Date(data.clock_out).toLocaleTimeString()}`;
-                clockInBtn.disabled = true;
-                clockOutBtn.disabled = true;
+                breakBtn.disabled = true;
+                statusDot.className = 'status-dot inactive';
+                statusText.textContent = 'Not Clocked In';
+                return;
             }
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    async function loadHistory() {
-        try {
-            const records = await hrApi.get('attendance/records/');
-            const tableBody = document.getElementById('history-table-body');
-            tableBody.innerHTML = '';
             
-            records.slice(0, 5).forEach(rec => {
-                let row = `
-                    <tr>
-                        <td>${rec.date}</td>
-                        <td><span class="badge bg-info text-dark">${rec.status}</span></td>
-                        <td>${rec.clock_in ? new Date(rec.clock_in).toLocaleTimeString() : '-'}</td>
-                        <td>${rec.clock_out ? new Date(rec.clock_out).toLocaleTimeString() : '-'}</td>
-                        <td>${rec.work_hours || '0'} hrs</td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        } catch (error) { console.error(error); }
-    }
-
-    clockInBtn.addEventListener('click', async () => {
-        try {
+            // Clocked in
             clockInBtn.disabled = true;
-            await hrApi.post('attendance/records/clock_in/');
-            showToast('Clocked in successfully', 'success');
-            loadTodayStatus();
-            loadHistory();
-        } catch (error) {
-            showToast(error.message, 'danger');
-            clockInBtn.disabled = false;
+            statusDot.className = 'status-dot active';
+            statusText.textContent = 'Clocked In';
+            
+            const clockInTime = new Date(record.clock_in);
+            document.getElementById('clock-in-time').textContent = clockInTime.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            if (record.clock_out) {
+                // Already clocked out
+                clockOutBtn.disabled = true;
+                breakBtn.disabled = true;
+                statusDot.className = 'status-dot inactive';
+                statusText.textContent = 'Clocked Out';
+                
+                const clockOutTime = new Date(record.clock_out);
+                document.getElementById('clock-out-time').textContent = clockOutTime.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                document.getElementById('work-hours').textContent = record.work_hours.toFixed(2);
+            } else {
+                // Still working
+                clockOutBtn.disabled = false;
+                breakBtn.disabled = false;
+            }
+            
+            if (record.total_break_minutes > 0) {
+                document.getElementById('break-time').textContent = `${record.total_break_minutes} min`;
+            }
         }
-    });
 
-    clockOutBtn.addEventListener('click', async () => {
-        try {
-            clockOutBtn.disabled = true;
-            await hrApi.post('attendance/records/clock_out/');
-            showToast('Clocked out successfully', 'success');
-            loadTodayStatus();
-            loadHistory();
-        } catch (error) {
-            showToast(error.message, 'danger');
-            clockOutBtn.disabled = false;
+        async function clockIn() {
+            if (!confirm('Clock in now?')) return;
+            
+            const position = await getLocation();
+            const formData = new FormData();
+            
+            if (position) {
+                formData.append('latitude', position.coords.latitude);
+                formData.append('longitude', position.coords.longitude);
+                formData.append('location', 'From Browser');
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/records/clock_in/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Clocked in successfully!', 'success');
+                    await loadTodayAttendance();
+                } else {
+                    showNotification(data.error || 'Failed to clock in', 'error');
+                }
+            } catch (error) {
+                showNotification('Error clocking in', 'error');
+                console.error(error);
+            }
         }
-    });
-</script>
-{% endblock %}
+
+        async function clockOut() {
+            if (!confirm('Clock out now?')) return;
+            
+            const position = await getLocation();
+            const formData = new FormData();
+            
+            if (position) {
+                formData.append('latitude', position.coords.latitude);
+                formData.append('longitude', position.coords.longitude);
+                formData.append('location', 'From Browser');
+            }
+            
+            // Optional work summary
+            const summary = prompt('Work summary (optional):');
+            if (summary) {
+                formData.append('work_summary', summary);
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/records/clock_out/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification(`Clocked out! Work hours: ${data.work_hours.toFixed(2)}`, 'success');
+                    await loadTodayAttendance();
+                } else {
+                    showNotification(data.error || 'Failed to clock out', 'error');
+                }
+            } catch (error) {
+                showNotification('Error clocking out', 'error');
+                console.error(error);
+            }
+        }
+
+        async function toggleBreak() {
+            if (!onBreak) {
+                // Start break
+                try {
+                    const response = await fetch(`${API_URL}/records/start_break/`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Token ${localStorage.getItem('authToken')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ break_type: 'LUNCH' })
+                    });
+                    
+                    if (response.ok) {
+                        onBreak = true;
+                        document.getElementById('break-text').textContent = 'End Break';
+                        showNotification('Break started', 'info');
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                // End break
+                try {
+                    const response = await fetch(`${API_URL}/records/end_break/`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                    });
+                    
+                    if (response.ok) {
+                        onBreak = false;
+                        document.getElementById('break-text').textContent = 'Start Break';
+                        showNotification('Break ended', 'info');
+                        loadTodayAttendance();
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+
+        async function loadRecentHistory() {
+            try {
+                const response = await fetch(`${API_URL}/records/my_attendance/`, {
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                const records = await response.json();
+                
+                const container = document.getElementById('attendance-history');
+                
+                if (records.length === 0) {
+                    container.innerHTML = '<p class="text-muted text-center">No attendance records yet</p>';
+                    return;
+                }
+                
+                container.innerHTML = records.slice(0, 7).map(record => {
+                    const date = new Date(record.date);
+                    const clockIn = record.clock_in ? new Date(record.clock_in).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                    const clockOut = record.clock_out ? new Date(record.clock_out).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                    
+                    let badgeClass = 'present';
+                    if (record.status === 'LATE') badgeClass = 'late';
+                    if (record.status === 'ABSENT' || record.status === 'UNAUTHORIZED') badgeClass = 'absent';
+                    
+                    return `
+                        <div class="history-item">
+                            <div>
+                                <div class="history-date">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                                <div class="history-time">${clockIn} - ${clockOut}</div>
+                            </div>
+                            <div>
+                                <span class="status-badge ${badgeClass}">${record.status}</span>
+                                ${record.work_hours > 0 ? `<small class="ms-2 text-muted">${record.work_hours.toFixed(1)}h</small>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Failed to load history:', error);
+            }
+        }
+
+        async function loadMonthlyStats() {
+            try {
+                const response = await fetch(`${API_URL}/records/statistics/`, {
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                const stats = await response.json();
+                
+                document.getElementById('present-days').textContent = stats.present_days || 0;
+                document.getElementById('late-days').textContent = stats.late_days || 0;
+                document.getElementById('total-hours').textContent = (stats.total_hours || 0).toFixed(0) + 'h';
+                document.getElementById('attendance-rate').textContent = (stats.attendance_rate || 0).toFixed(0) + '%';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(resolve, () => resolve(null));
+                } else {
+                    resolve(null);
+                }
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            alert(message);
+        }
+
+        function viewAllHistory() {
+            window.location.href = '/attendance/history/';
+        }
+    </script>
+</body>
+</html>

@@ -1,18 +1,17 @@
 from django.db import models
 from django.conf import settings
-from django.db.models.signals import post_save, pre_save
-from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.db.models import Q, Count, Avg
 from datetime import date, timedelta
 from decimal import Decimal
+import uuid
 
 
 class Department(models.Model):
-    """
-    Department/Division within the organization
-    """
+    """Enhanced Department model with budgeting and hierarchy"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True)
     code = models.CharField(max_length=10, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
@@ -51,6 +50,13 @@ class Department(models.Model):
     phone = models.CharField(max_length=20, blank=True, null=True)
     location = models.CharField(max_length=200, blank=True, null=True)
     
+    # Cost center
+    cost_center_code = models.CharField(max_length=20, blank=True, null=True)
+    
+    # Goals and objectives
+    objectives = models.TextField(blank=True, null=True)
+    kpis = models.JSONField(default=dict, blank=True)
+    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -59,6 +65,10 @@ class Department(models.Model):
         ordering = ['name']
         verbose_name = _('Department')
         verbose_name_plural = _('Departments')
+        indexes = [
+            models.Index(fields=['code', 'is_active']),
+            models.Index(fields=['parent_department']),
+        ]
 
     def __str__(self):
         return self.name
@@ -70,7 +80,7 @@ class Department(models.Model):
 
     @property
     def employee_count(self):
-        """Return the number of active employees in this department"""
+        """Return the number of active employees"""
         return self.employee_set.filter(status='ACTIVE').count()
 
     @property
@@ -84,33 +94,58 @@ class Department(models.Model):
     def budget_utilization_percentage(self):
         """Calculate budget utilization percentage"""
         if self.annual_budget and self.annual_budget > 0:
-            return (self.budget_used / self.annual_budget) * 100
+            return round((self.budget_used / self.annual_budget) * 100, 2)
         return 0
 
     def get_all_employees(self, include_sub_departments=True):
         """Get all employees including sub-departments"""
-        employees = self.employee_set.filter(status='ACTIVE')
+        from django.db.models import Q
+        query = Q(department=self, status='ACTIVE')
+        
         if include_sub_departments:
-            for sub_dept in self.sub_departments.filter(is_active=True):
-                employees = employees | sub_dept.get_all_employees()
-        return employees.distinct()
+            sub_dept_ids = self.get_all_sub_departments()
+            query |= Q(department__in=sub_dept_ids, status='ACTIVE')
+        
+        return Employee.objects.filter(query).distinct()
+
+    def get_all_sub_departments(self):
+        """Get all sub-department IDs recursively"""
+        sub_depts = list(self.sub_departments.filter(is_active=True))
+        all_subs = sub_depts.copy()
+        
+        for sub in sub_depts:
+            all_subs.extend(sub.get_all_sub_departments())
+        
+        return all_subs
 
     def get_hierarchy_level(self):
-        """Get the hierarchical level of this department"""
+        """Get the hierarchical level"""
         level = 0
         current = self.parent_department
-        while current:
+        while current and level < 10:
             level += 1
             current = current.parent_department
-            if level > 10:  # Prevent infinite loops
-                break
         return level
+
+    def get_average_salary(self):
+        """Get average salary in department"""
+        return self.employee_set.filter(
+            status='ACTIVE',
+            current_salary__isnull=False
+        ).aggregate(avg=Avg('current_salary'))['avg'] or 0
+
+    def get_total_payroll_cost(self):
+        """Calculate total monthly payroll cost"""
+        total = self.employee_set.filter(
+            status='ACTIVE',
+            current_salary__isnull=False
+        ).aggregate(total=models.Sum('current_salary'))['total'] or 0
+        return total
 
 
 class Designation(models.Model):
-    """
-    Job title/position within the organization
-    """
+    """Enhanced Job title/position"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100, unique=True)
     code = models.CharField(max_length=10, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
@@ -119,20 +154,29 @@ class Designation(models.Model):
         help_text="Organizational level (1=Entry, 5=Executive)"
     )
     
+    # Career progression
+    next_level_designation = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='previous_level_designations'
+    )
+    
     # Salary range
     min_salary = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Minimum salary for this position in USD"
+        help_text="Minimum salary in USD"
     )
     max_salary = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Maximum salary for this position in USD"
+        help_text="Maximum salary in USD"
     )
     
     # Reporting structure
@@ -147,11 +191,16 @@ class Designation(models.Model):
     # Job requirements
     required_education = models.TextField(blank=True, null=True)
     required_experience_years = models.PositiveIntegerField(default=0)
-    required_skills = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Comma-separated list of required skills"
-    )
+    required_skills = models.JSONField(default=list, blank=True)
+    required_certifications = models.JSONField(default=list, blank=True)
+    
+    # Responsibilities
+    key_responsibilities = models.JSONField(default=list, blank=True)
+    
+    # Benefits
+    eligible_for_bonus = models.BooleanField(default=True)
+    eligible_for_overtime = models.BooleanField(default=False)
+    eligible_for_company_car = models.BooleanField(default=False)
     
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -172,7 +221,7 @@ class Designation(models.Model):
 
     @property
     def current_employee_count(self):
-        """Count of active employees in this designation"""
+        """Count of active employees"""
         return self.employee_set.filter(status='ACTIVE').count()
 
     @property
@@ -184,9 +233,8 @@ class Designation(models.Model):
 
 
 class Employee(models.Model):
-    """
-    Employee information and employment details - Enhanced for Zimbabwe
-    """
+    """Enhanced Employee model for Zimbabwe"""
+    
     class EmploymentStatus(models.TextChoices):
         PROBATION = 'PROBATION', _('Probation')
         ACTIVE = 'ACTIVE', _('Active')
@@ -205,29 +253,30 @@ class Employee(models.Model):
         CONSULTANT = 'CONSULTANT', _('Consultant')
         TEMPORARY = 'TEMPORARY', _('Temporary')
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         related_name='employee_profile'
     )
     employee_id = models.CharField(max_length=20, unique=True, blank=True, db_index=True)
     department = models.ForeignKey(
-        Department, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True
     )
     designation = models.ForeignKey(
-        Designation, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        Designation,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True
     )
     manager = models.ForeignKey(
-        'self', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='subordinates'
     )
     shift = models.ForeignKey(
@@ -247,14 +296,14 @@ class Employee(models.Model):
     
     # Employment details
     status = models.CharField(
-        max_length=20, 
-        choices=EmploymentStatus.choices, 
+        max_length=20,
+        choices=EmploymentStatus.choices,
         default=EmploymentStatus.PROBATION,
         db_index=True
     )
     employment_type = models.CharField(
-        max_length=20, 
-        choices=EmploymentType.choices, 
+        max_length=20,
+        choices=EmploymentType.choices,
         default=EmploymentType.FULL_TIME
     )
     
@@ -262,18 +311,8 @@ class Employee(models.Model):
     work_email = models.EmailField(blank=True, null=True)
     work_phone = models.CharField(max_length=20, blank=True, null=True)
     national_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
-    tax_number = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        help_text="ZIMRA Tax Number"
-    )
-    nssa_number = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        help_text="National Social Security Authority Number"
-    )
+    tax_number = models.CharField(max_length=50, blank=True, null=True, help_text="ZIMRA Tax Number")
+    nssa_number = models.CharField(max_length=50, blank=True, null=True, help_text="NSSA Number")
     pension_number = models.CharField(max_length=50, blank=True, null=True)
     
     # Contract details
@@ -296,12 +335,13 @@ class Employee(models.Model):
         blank=True,
         null=True,
         choices=[
-            ('Head Office', 'Head Office'),
-            ('Branch Office', 'Branch Office'),
-            ('Remote', 'Remote'),
-            ('Hybrid', 'Hybrid'),
+            ('HEAD_OFFICE', 'Head Office'),
+            ('BRANCH', 'Branch Office'),
+            ('REMOTE', 'Remote'),
+            ('HYBRID', 'Hybrid'),
         ]
     )
+    office_location = models.CharField(max_length=200, blank=True, null=True)
     
     # Salary information
     current_salary = models.DecimalField(
@@ -309,7 +349,7 @@ class Employee(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Current gross salary in USD"
+        help_text="Current gross salary"
     )
     salary_currency = models.CharField(
         max_length=3,
@@ -328,12 +368,22 @@ class Employee(models.Model):
     last_review_date = models.DateField(null=True, blank=True)
     next_review_date = models.DateField(null=True, blank=True)
     
+    # Skills and competencies
+    skills = models.JSONField(default=list, blank=True)
+    certifications = models.JSONField(default=list, blank=True)
+    languages = models.JSONField(default=list, blank=True)
+    
     # Additional flags
     is_remote_worker = models.BooleanField(default=False)
     is_union_member = models.BooleanField(default=False)
     has_security_clearance = models.BooleanField(default=False)
     can_approve_expenses = models.BooleanField(default=False)
     can_recruit = models.BooleanField(default=False)
+    can_approve_leave = models.BooleanField(default=False)
+    can_approve_timesheets = models.BooleanField(default=False)
+    
+    # Emergency contact stored as JSON for flexibility
+    emergency_contact_info = models.JSONField(default=dict, blank=True)
     
     # Termination details
     termination_reason = models.TextField(blank=True, null=True)
@@ -351,10 +401,23 @@ class Employee(models.Model):
     )
     eligible_for_rehire = models.BooleanField(default=True)
     exit_interview_completed = models.BooleanField(default=False)
+    exit_interview_date = models.DateField(null=True, blank=True)
+    final_settlement_date = models.DateField(null=True, blank=True)
+    
+    # Onboarding
+    onboarding_completed = models.BooleanField(default=False)
+    onboarding_completion_date = models.DateField(null=True, blank=True)
     
     # Notes
-    notes = models.TextField(blank=True, null=True, help_text="Internal notes about employee")
+    notes = models.TextField(blank=True, null=True)
     
+    # Metadata
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='employees_created'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -366,7 +429,7 @@ class Employee(models.Model):
             models.Index(fields=['employee_id', 'status']),
             models.Index(fields=['department', 'status']),
             models.Index(fields=['national_id']),
-            models.Index(fields=['nssa_number']),
+            models.Index(fields=['work_email']),
         ]
 
     def __str__(self):
@@ -386,19 +449,26 @@ class Employee(models.Model):
                 raise ValidationError('Contract end date cannot be before start date')
 
     def save(self, *args, **kwargs):
-        # Auto-generate employee ID if not provided
+        # Auto-generate employee ID
         if not self.employee_id:
-            last_employee = Employee.objects.all().order_by('id').last()
-            next_id = (last_employee.id + 1) if last_employee else 1
+            last_employee = Employee.objects.all().order_by('-created_at').first()
+            next_id = 1
+            if last_employee and last_employee.employee_id:
+                try:
+                    last_num = int(last_employee.employee_id.split('-')[-1])
+                    next_id = last_num + 1
+                except:
+                    pass
+            
             dept_code = self.department.code[:3] if self.department else 'GEN'
-            year = timezone.now().year
-            self.employee_id = f'{dept_code}{year}{next_id:04d}'
+            year = timezone.now().year % 100
+            self.employee_id = f'{dept_code}-{year:02d}-{next_id:05d}'
         
-        # Set work email if not provided
+        # Set work email
         if not self.work_email and self.user.email:
             self.work_email = self.user.email
         
-        # Auto-calculate probation end date (90 days) if not set
+        # Auto-calculate probation end date
         if not self.probation_end_date and self.join_date:
             self.probation_end_date = self.join_date + timedelta(days=90)
         
@@ -411,26 +481,22 @@ class Employee(models.Model):
 
     @property
     def full_name(self):
-        """Return employee's full name"""
         return self.user.get_full_name()
 
     @property
     def is_on_probation(self):
-        """Check if employee is still on probation"""
         if self.status == 'PROBATION' and self.probation_end_date:
             return date.today() <= self.probation_end_date
         return False
 
     @property
     def probation_days_remaining(self):
-        """Days remaining in probation period"""
         if self.is_on_probation:
             return (self.probation_end_date - date.today()).days
         return 0
 
     @property
     def tenure_years(self):
-        """Calculate years of service"""
         if self.join_date:
             end_date = self.termination_date or date.today()
             return round((end_date - self.join_date).days / 365.25, 2)
@@ -438,7 +504,6 @@ class Employee(models.Model):
 
     @property
     def tenure_months(self):
-        """Calculate months of service"""
         if self.join_date:
             end_date = self.termination_date or date.today()
             return round((end_date - self.join_date).days / 30.44, 1)
@@ -446,182 +511,117 @@ class Employee(models.Model):
 
     @property
     def is_manager(self):
-        """Check if employee has subordinates"""
-        return self.subordinates.exists()
+        return self.subordinates.filter(status='ACTIVE').exists()
 
     @property
     def subordinate_count(self):
-        """Count of direct subordinates"""
         return self.subordinates.filter(status='ACTIVE').count()
 
     @property
     def is_contract_expiring_soon(self):
-        """Check if contract is expiring within 30 days"""
         if self.contract_end_date:
-            days_until_expiry = (self.contract_end_date - date.today()).days
-            return 0 < days_until_expiry <= 30
+            days_until = (self.contract_end_date - date.today()).days
+            return 0 < days_until <= 30
         return False
 
     @property
     def days_until_contract_expiry(self):
-        """Days until contract expiry"""
         if self.contract_end_date:
             return (self.contract_end_date - date.today()).days
         return None
 
     @property
     def is_due_for_review(self):
-        """Check if employee is due for performance review"""
         if self.next_review_date:
             return date.today() >= self.next_review_date
         return False
 
-    @property
-    def age(self):
-        """Get employee age from profile"""
-        if hasattr(self.user, 'profile') and self.user.profile.date_of_birth:
-            return self.user.profile.age
-        return None
-
     def get_reporting_chain(self):
-        """Get the full reporting chain up to top management"""
+        """Get full reporting chain"""
         chain = []
         current = self.manager
-        while current:
+        while current and len(chain) < 10:
             chain.append(current)
             current = current.manager
-            if len(chain) > 10:  # Prevent infinite loops
-                break
         return chain
 
     def get_all_subordinates(self, include_indirect=True):
-        """Get all subordinates including indirect reports"""
+        """Get all subordinates including indirect"""
         subordinates = list(self.subordinates.filter(status='ACTIVE'))
         if include_indirect:
-            for subordinate in list(subordinates):
-                subordinates.extend(subordinate.get_all_subordinates())
-        return subordinates
+            for sub in list(subordinates):
+                subordinates.extend(sub.get_all_subordinates())
+        return list(set(subordinates))
 
-    def calculate_annual_salary_cost(self):
-        """Calculate total annual salary cost including benefits"""
+    def calculate_annual_cost(self):
+        """Calculate total annual cost"""
         if self.current_salary:
-            # Add 15% for benefits (NSSA, pension, etc.)
             return self.current_salary * 12 * Decimal('1.15')
         return Decimal('0')
 
-    def is_eligible_for_promotion(self):
-        """Check eligibility for promotion"""
-        criteria = [
-            self.status == 'ACTIVE',
-            self.tenure_years >= 1,
-            self.performance_rating and self.performance_rating >= Decimal('3.5'),
-            not self.is_on_probation
-        ]
-        return all(criteria)
-
 
 class EmergencyContact(models.Model):
-    """
-    Emergency contact information for employees
-    """
-    employee = models.ForeignKey(
-        Employee, 
-        on_delete=models.CASCADE, 
-        related_name='emergency_contacts'
-    )
+    """Emergency contact information"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='emergency_contacts')
     name = models.CharField(max_length=100)
-    relationship = models.CharField(
-        max_length=50,
-        choices=[
-            ('SPOUSE', 'Spouse'),
-            ('PARENT', 'Parent'),
-            ('SIBLING', 'Sibling'),
-            ('CHILD', 'Child'),
-            ('FRIEND', 'Friend'),
-            ('RELATIVE', 'Relative'),
-            ('OTHER', 'Other'),
-        ]
-    )
+    relationship = models.CharField(max_length=50, choices=[
+        ('SPOUSE', 'Spouse'), ('PARENT', 'Parent'), ('SIBLING', 'Sibling'),
+        ('CHILD', 'Child'), ('FRIEND', 'Friend'), ('RELATIVE', 'Relative'), ('OTHER', 'Other'),
+    ])
     phone_number = models.CharField(max_length=20)
     alternate_phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     is_primary = models.BooleanField(default=False)
     can_make_medical_decisions = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-is_primary', 'name']
-        verbose_name = _('Emergency Contact')
-        verbose_name_plural = _('Emergency Contacts')
 
     def __str__(self):
-        return f"{self.name} ({self.relationship}) - {self.employee}"
+        return f"{self.name} ({self.relationship})"
 
     def save(self, *args, **kwargs):
-        # Ensure only one primary contact per employee
         if self.is_primary:
             EmergencyContact.objects.filter(
-                employee=self.employee, 
+                employee=self.employee,
                 is_primary=True
             ).exclude(pk=self.pk).update(is_primary=False)
         super().save(*args, **kwargs)
 
 
 class BankDetails(models.Model):
-    """
-    Banking information for salary payments - Zimbabwe banks
-    """
+    """Banking information for Zimbabwe"""
     ZIMBABWE_BANKS = [
-        ('CBZ', 'CBZ Bank'),
-        ('CABS', 'CABS'),
-        ('FBC', 'FBC Bank'),
-        ('NMB', 'NMB Bank'),
-        ('Stanbic', 'Stanbic Bank'),
-        ('Standard Chartered', 'Standard Chartered Bank'),
-        ('ZB Bank', 'ZB Bank'),
-        ('BancABC', 'BancABC'),
-        ('Steward Bank', 'Steward Bank'),
-        ('Ecobank', 'Ecobank Zimbabwe'),
-        ('First Capital Bank', 'First Capital Bank'),
-        ('Nedbank', 'Nedbank Zimbabwe'),
-        ('Agribank', 'Agribank'),
-        ('POSB', 'People\'s Own Savings Bank'),
-        ('MetBank', 'MetBank'),
+        ('CBZ', 'CBZ Bank'), ('CABS', 'CABS'), ('FBC', 'FBC Bank'),
+        ('NMB', 'NMB Bank'), ('Stanbic', 'Stanbic Bank'),
+        ('Standard Chartered', 'Standard Chartered'), ('ZB Bank', 'ZB Bank'),
+        ('BancABC', 'BancABC'), ('Steward Bank', 'Steward Bank'),
+        ('Ecobank', 'Ecobank'), ('First Capital Bank', 'First Capital Bank'),
+        ('Nedbank', 'Nedbank'), ('Agribank', 'Agribank'),
+        ('POSB', 'POSB'), ('MetBank', 'MetBank'),
     ]
     
-    employee = models.OneToOneField(
-        Employee, 
-        on_delete=models.CASCADE, 
-        related_name='bank_details'
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, related_name='bank_details')
     bank_name = models.CharField(max_length=100, choices=ZIMBABWE_BANKS)
     account_number = models.CharField(max_length=50)
     account_holder_name = models.CharField(max_length=100, blank=True)
     branch_name = models.CharField(max_length=100, blank=True)
     branch_code = models.CharField(max_length=20, blank=True)
-    account_type = models.CharField(
-        max_length=20,
-        choices=[
-            ('SAVINGS', 'Savings'),
-            ('CURRENT', 'Current/Checking'),
-            ('NOSTRO', 'Nostro (USD)'),
-        ],
-        default='SAVINGS'
-    )
+    account_type = models.CharField(max_length=20, choices=[
+        ('SAVINGS', 'Savings'), ('CURRENT', 'Current'), ('NOSTRO', 'Nostro (USD)'),
+    ], default='SAVINGS')
     swift_code = models.CharField(max_length=20, blank=True)
     
-    # Mobile money options
+    # Mobile money
     has_mobile_money = models.BooleanField(default=False)
-    mobile_money_provider = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        choices=[
-            ('ECOCASH', 'EcoCash'),
-            ('ONEMONEY', 'OneMoney'),
-            ('TELECASH', 'TeleCash'),
-        ]
-    )
+    mobile_money_provider = models.CharField(max_length=50, blank=True, null=True, choices=[
+        ('ECOCASH', 'EcoCash'), ('ONEMONEY', 'OneMoney'), ('TELECASH', 'TeleCash'),
+    ])
     mobile_money_number = models.CharField(max_length=20, blank=True, null=True)
     
     is_verified = models.BooleanField(default=False)
@@ -630,71 +630,42 @@ class BankDetails(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True,
-        related_name='verified_bank_details'
+        blank=True
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        verbose_name = _('Bank Details')
-        verbose_name_plural = _('Bank Details')
-
     def __str__(self):
         return f"{self.employee} - {self.bank_name}"
 
-    def save(self, *args, **kwargs):
-        if not self.account_holder_name:
-            self.account_holder_name = self.employee.full_name
-        super().save(*args, **kwargs)
-
 
 class EmployeeDocument(models.Model):
-    """
-    Document storage for employee records
-    """
+    """Document storage"""
     class DocumentType(models.TextChoices):
         ID = 'ID', _('National ID')
         PASSPORT = 'PASSPORT', _('Passport')
-        CERTIFICATE = 'CERTIFICATE', _('Certificate/Diploma')
+        CERTIFICATE = 'CERTIFICATE', _('Certificate')
         DEGREE = 'DEGREE', _('Degree')
-        CONTRACT = 'CONTRACT', _('Employment Contract')
-        RESUME = 'RESUME', _('Resume/CV')
+        CONTRACT = 'CONTRACT', _('Contract')
+        RESUME = 'RESUME', _('Resume')
         MEDICAL = 'MEDICAL', _('Medical Certificate')
         POLICE_CLEARANCE = 'POLICE_CLEARANCE', _('Police Clearance')
         TAX_CLEARANCE = 'TAX_CLEARANCE', _('Tax Clearance')
-        REFERENCE = 'REFERENCE', _('Reference Letter')
+        REFERENCE = 'REFERENCE', _('Reference')
         OTHER = 'OTHER', _('Other')
 
-    employee = models.ForeignKey(
-        Employee, 
-        on_delete=models.CASCADE, 
-        related_name='documents'
-    )
-    document_type = models.CharField(
-        max_length=20,
-        choices=DocumentType.choices,
-        default=DocumentType.OTHER
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='documents')
+    document_type = models.CharField(max_length=20, choices=DocumentType.choices)
     title = models.CharField(max_length=200)
     document = models.FileField(upload_to='employee_documents/%Y/%m/')
     description = models.TextField(blank=True, null=True)
-    document_number = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="ID/Passport/Certificate number"
-    )
+    document_number = models.CharField(max_length=100, blank=True, null=True)
     issue_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
     
-    uploaded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='uploaded_documents'
-    )
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     is_verified = models.BooleanField(default=False)
@@ -706,93 +677,50 @@ class EmployeeDocument(models.Model):
         related_name='verified_documents'
     )
     verified_at = models.DateTimeField(null=True, blank=True)
-    
     is_confidential = models.BooleanField(default=False)
     is_mandatory = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-uploaded_at']
-        verbose_name = _('Employee Document')
-        verbose_name_plural = _('Employee Documents')
 
     def __str__(self):
         return f"{self.title} - {self.employee}"
 
     @property
-    def file_size(self):
-        """Return file size in MB"""
-        if self.document:
-            return round(self.document.size / (1024 * 1024), 2)
-        return 0
-
-    @property
     def is_expiring_soon(self):
-        """Check if document expires within 30 days"""
         if self.expiry_date:
-            days_until_expiry = (self.expiry_date - date.today()).days
-            return 0 < days_until_expiry <= 30
+            return 0 < (self.expiry_date - date.today()).days <= 30
         return False
 
     @property
     def is_expired(self):
-        """Check if document is expired"""
         if self.expiry_date:
             return date.today() > self.expiry_date
         return False
 
 
 class Dependent(models.Model):
-    """
-    Employee dependents for benefits and tax purposes
-    """
-    employee = models.ForeignKey(
-        Employee,
-        on_delete=models.CASCADE,
-        related_name='dependents'
-    )
+    """Employee dependents"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='dependents')
     name = models.CharField(max_length=200)
-    relationship = models.CharField(
-        max_length=50,
-        choices=[
-            ('SPOUSE', 'Spouse'),
-            ('CHILD', 'Child'),
-            ('PARENT', 'Parent'),
-            ('SIBLING', 'Sibling'),
-            ('OTHER', 'Other'),
-        ]
-    )
+    relationship = models.CharField(max_length=50, choices=[
+        ('SPOUSE', 'Spouse'), ('CHILD', 'Child'), ('PARENT', 'Parent'),
+        ('SIBLING', 'Sibling'), ('OTHER', 'Other'),
+    ])
     date_of_birth = models.DateField()
-    gender = models.CharField(
-        max_length=10,
-        choices=[('M', 'Male'), ('F', 'Female')]
-    )
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female')])
     national_id = models.CharField(max_length=50, blank=True, null=True)
-    
-    # Medical aid information
     is_on_medical_aid = models.BooleanField(default=False)
     medical_aid_number = models.CharField(max_length=50, blank=True, null=True)
-    
-    # Education (for children)
     is_student = models.BooleanField(default=False)
     school_name = models.CharField(max_length=200, blank=True, null=True)
-    
-    # Tax purposes
     is_tax_dependent = models.BooleanField(default=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ['relationship', 'name']
-        verbose_name = 'Dependent'
-        verbose_name_plural = 'Dependents'
-
-    def __str__(self):
-        return f"{self.name} ({self.relationship}) - {self.employee}"
-
     @property
     def age(self):
-        """Calculate dependent's age"""
         today = date.today()
         return today.year - self.date_of_birth.year - (
             (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
@@ -800,69 +728,23 @@ class Dependent(models.Model):
 
 
 class EmployeeNote(models.Model):
-    """
-    Internal notes and observations about employees
-    """
-    employee = models.ForeignKey(
-        Employee,
-        on_delete=models.CASCADE,
-        related_name='internal_notes'
-    )
+    """Internal employee notes"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='internal_notes')
     title = models.CharField(max_length=200)
     content = models.TextField()
-    note_type = models.CharField(
-        max_length=30,
-        choices=[
-            ('GENERAL', 'General Note'),
-            ('PERFORMANCE', 'Performance Note'),
-            ('DISCIPLINARY', 'Disciplinary Note'),
-            ('ACHIEVEMENT', 'Achievement'),
-            ('CONCERN', 'Concern'),
-            ('MEETING', 'Meeting Notes'),
-        ],
-        default='GENERAL'
-    )
+    note_type = models.CharField(max_length=30, choices=[
+        ('GENERAL', 'General'), ('PERFORMANCE', 'Performance'),
+        ('DISCIPLINARY', 'Disciplinary'), ('ACHIEVEMENT', 'Achievement'),
+        ('CONCERN', 'Concern'), ('MEETING', 'Meeting Notes'),
+    ], default='GENERAL')
     is_confidential = models.BooleanField(default=True)
-    
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='employee_notes_created'
-    )
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Employee Note'
-        verbose_name_plural = 'Employee Notes'
 
     def __str__(self):
         return f"{self.title} - {self.employee}"
-
-
-# Signals
-@receiver(post_save, sender=Employee)
-def create_employee_bank_details(sender, instance, created, **kwargs):
-    """
-    Create bank details record when employee is created
-    """
-    if created:
-        BankDetails.objects.get_or_create(employee=instance)
-
-
-@receiver(post_save, sender=Employee)
-def update_employee_status(sender, instance, **kwargs):
-    """
-    Automatically update employee status based on dates
-    """
-    if instance.status == 'PROBATION' and instance.probation_end_date:
-        if date.today() > instance.probation_end_date and not instance.confirmation_date:
-            # Probation ended but not confirmed - needs review
-            pass
-    
-    if instance.contract_end_date and date.today() > instance.contract_end_date:
-        if instance.employment_type == 'CONTRACT' and instance.status == 'ACTIVE':
-            # Contract expired - needs review
-            pass
