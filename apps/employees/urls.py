@@ -5,11 +5,13 @@ from .views import DepartmentViewSet, DesignationViewSet, EmployeeViewSet
 router = DefaultRouter()
 router.register(r'departments', DepartmentViewSet, basename='department')
 router.register(r'designations', DesignationViewSet, basename='designation')
-router.register(r'employees', EmployeeViewSet, basename='employee')
+router.register(r'', EmployeeViewSet, basename='employee')
 
 app_name = 'employees'
 
 urlpatterns = [
+
+     path('list/', EmployeeListView.as_view(), name='employee_list'),
     # API Routes
     path('api/', include(router.urls)),
     
