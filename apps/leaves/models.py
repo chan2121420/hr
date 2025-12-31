@@ -3,22 +3,23 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from apps.employees.models import Employee
 from datetime import timedelta, date
 from decimal import Decimal
+import uuid
 
 
 class LeaveType(models.Model):
-    """
-    Types of leave available - Zimbabwe Labour Act compliant
-    """
+    """Enhanced leave types - Zimbabwe Labour Act compliant"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True)
     code = models.CharField(max_length=10, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
     
     # Allocation
     default_days_allocated = models.PositiveIntegerField(
-        default=20,
+        default=22,
         validators=[MinValueValidator(0)],
         help_text="Annual leave days (Zimbabwe: 22 working days per year)"
     )
@@ -40,7 +41,7 @@ class LeaveType(models.Model):
     requires_hr_approval = models.BooleanField(default=False)
     requires_document = models.BooleanField(
         default=False,
-        help_text="Requires supporting documentation (e.g., medical certificate)"
+        help_text="Requires supporting documentation"
     )
     
     # Carryforward settings
@@ -66,7 +67,7 @@ class LeaveType(models.Model):
         help_text="Days accrued per month if monthly accrual"
     )
     
-    # Gender-specific (e.g., maternity/paternity)
+    # Gender-specific
     gender_specific = models.CharField(
         max_length=10,
         choices=[('M', 'Male'), ('F', 'Female'), ('N', 'Neutral')],
@@ -83,7 +84,7 @@ class LeaveType(models.Model):
         help_text="Can be taken during probation period"
     )
     
-    # Notice period required
+    # Notice period
     notice_days_required = models.PositiveIntegerField(
         default=7,
         help_text="Days in advance the leave must be requested"
@@ -124,6 +125,8 @@ class LeaveType(models.Model):
     is_study_leave = models.BooleanField(default=False)
     is_compassionate_leave = models.BooleanField(default=False)
     is_sabbatical = models.BooleanField(default=False)
+    is_maternity_leave = models.BooleanField(default=False)
+    is_paternity_leave = models.BooleanField(default=False)
     
     # Display settings
     color_code = models.CharField(
@@ -131,7 +134,7 @@ class LeaveType(models.Model):
         default='#10B981',
         help_text="Hex color code for calendar display"
     )
-    icon = models.CharField(max_length=50, blank=True, help_text="Icon class name")
+    icon = models.CharField(max_length=50, default='fa-plane', help_text="Icon class name")
     
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -139,8 +142,8 @@ class LeaveType(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Leave Type'
-        verbose_name_plural = 'Leave Types'
+        verbose_name = _('Leave Type')
+        verbose_name_plural = _('Leave Types')
 
     def __str__(self):
         return self.name
@@ -152,15 +155,12 @@ class LeaveType(models.Model):
 
     def is_eligible(self, employee):
         """Check if employee is eligible for this leave type"""
-        # Check service period
         if employee.tenure_months < self.min_service_months:
             return False, "Insufficient service period"
         
-        # Check probation
         if employee.is_on_probation and not self.applies_to_probation:
             return False, "Not available during probation"
         
-        # Check gender
         if self.gender_specific != 'N':
             if hasattr(employee.user, 'profile'):
                 if employee.user.profile.gender != self.gender_specific:
@@ -170,34 +170,29 @@ class LeaveType(models.Model):
 
 
 class Holiday(models.Model):
-    """
-    Public holidays and non-working days - Zimbabwe holidays
-    """
+    """Zimbabwe public holidays and non-working days"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     date = models.DateField(unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
     
     is_recurring = models.BooleanField(
         default=False,
-        help_text="If true, this holiday occurs every year on the same date"
+        help_text="Holiday occurs every year on the same date"
     )
     is_optional = models.BooleanField(
         default=False,
-        help_text="Optional holiday (employees can choose to work)"
+        help_text="Optional holiday"
     )
     is_half_day = models.BooleanField(default=False)
     
-    applies_to_all = models.BooleanField(
-        default=True,
-        help_text="Applies to all employees"
-    )
+    applies_to_all = models.BooleanField(default=True)
     departments = models.ManyToManyField(
         'employees.Department',
         blank=True,
         help_text="Specific departments this holiday applies to"
     )
     
-    # Zimbabwe-specific
     is_national_holiday = models.BooleanField(default=True)
     substitute_date = models.DateField(
         null=True,
@@ -210,8 +205,8 @@ class Holiday(models.Model):
 
     class Meta:
         ordering = ['date']
-        verbose_name = 'Public Holiday'
-        verbose_name_plural = 'Public Holidays'
+        verbose_name = _('Public Holiday')
+        verbose_name_plural = _('Public Holidays')
 
     def __str__(self):
         return f"{self.name} ({self.date})"
@@ -229,9 +224,8 @@ class Holiday(models.Model):
 
 
 class LeaveBalance(models.Model):
-    """
-    Track leave balances for each employee
-    """
+    """Track leave balances for each employee"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.ForeignKey(
         Employee,
         on_delete=models.CASCADE,
@@ -295,8 +289,12 @@ class LeaveBalance(models.Model):
     class Meta:
         unique_together = ('employee', 'leave_type', 'year')
         ordering = ['-year', 'employee']
-        verbose_name = 'Leave Balance'
-        verbose_name_plural = 'Leave Balances'
+        verbose_name = _('Leave Balance')
+        verbose_name_plural = _('Leave Balances')
+        indexes = [
+            models.Index(fields=['employee', 'year']),
+            models.Index(fields=['leave_type', 'year']),
+        ]
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type} ({self.year})"
@@ -351,23 +349,23 @@ class LeaveBalance(models.Model):
 
 
 class LeaveRequest(models.Model):
-    """
-    Leave requests submitted by employees
-    """
+    """Enhanced leave requests"""
+    
     class LeaveStatus(models.TextChoices):
-        DRAFT = 'DRAFT', 'Draft'
-        PENDING = 'PENDING', 'Pending'
-        MANAGER_APPROVED = 'MANAGER_APPROVED', 'Manager Approved'
-        HR_APPROVED = 'HR_APPROVED', 'HR Approved'
-        APPROVED = 'APPROVED', 'Approved'
-        REJECTED = 'REJECTED', 'Rejected'
-        CANCELLED = 'CANCELLED', 'Cancelled'
-        WITHDRAWN = 'WITHDRAWN', 'Withdrawn'
-        EXPIRED = 'EXPIRED', 'Expired'
+        DRAFT = 'DRAFT', _('Draft')
+        PENDING = 'PENDING', _('Pending')
+        MANAGER_APPROVED = 'MANAGER_APPROVED', _('Manager Approved')
+        HR_APPROVED = 'HR_APPROVED', _('HR Approved')
+        APPROVED = 'APPROVED', _('Approved')
+        REJECTED = 'REJECTED', _('Rejected')
+        CANCELLED = 'CANCELLED', _('Cancelled')
+        WITHDRAWN = 'WITHDRAWN', _('Withdrawn')
+        EXPIRED = 'EXPIRED', _('Expired')
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.ForeignKey(
-        Employee, 
-        on_delete=models.CASCADE, 
+        Employee,
+        on_delete=models.CASCADE,
         related_name='leave_requests'
     )
     leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT)
@@ -385,8 +383,8 @@ class LeaveRequest(models.Model):
     )
     
     status = models.CharField(
-        max_length=30, 
-        choices=LeaveStatus.choices, 
+        max_length=30,
+        choices=LeaveStatus.choices,
         default=LeaveStatus.PENDING,
         db_index=True
     )
@@ -399,22 +397,20 @@ class LeaveRequest(models.Model):
     )
     additional_documents = models.JSONField(
         default=list,
-        blank=True,
-        help_text="Array of additional document URLs"
+        blank=True
     )
     
     # Approval workflow
     manager_approved_by = models.ForeignKey(
-        Employee, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='manager_approved_leaves'
     )
     manager_approved_at = models.DateTimeField(null=True, blank=True)
     manager_comments = models.TextField(blank=True)
     
-    # HR approval
     hr_approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -425,7 +421,6 @@ class LeaveRequest(models.Model):
     hr_approved_at = models.DateTimeField(null=True, blank=True)
     hr_comments = models.TextField(blank=True)
     
-    # Final approval (for multi-level approval)
     final_approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -447,21 +442,17 @@ class LeaveRequest(models.Model):
     rejection_reason = models.TextField(blank=True)
     
     # Handover information
-    handover_notes = models.TextField(
-        blank=True,
-        help_text="Work handover details during absence"
-    )
+    handover_notes = models.TextField(blank=True)
     covering_employee = models.ForeignKey(
         Employee,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='covering_leaves',
-        help_text="Employee covering duties during leave"
+        related_name='covering_leaves'
     )
     covering_employee_notified = models.BooleanField(default=False)
     
-    # Emergency contact during leave
+    # Emergency contact
     emergency_contact_name = models.CharField(max_length=200, blank=True)
     emergency_contact_phone = models.CharField(max_length=20, blank=True)
     
@@ -502,8 +493,8 @@ class LeaveRequest(models.Model):
             models.Index(fields=['start_date', 'end_date']),
             models.Index(fields=['status', 'requested_at']),
         ]
-        verbose_name = 'Leave Request'
-        verbose_name_plural = 'Leave Requests'
+        verbose_name = _('Leave Request')
+        verbose_name_plural = _('Leave Requests')
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type} ({self.start_date} to {self.end_date})"
@@ -514,11 +505,9 @@ class LeaveRequest(models.Model):
             if self.end_date < self.start_date:
                 raise ValidationError('End date must be after start date')
             
-            # Check if dates are in the past
             if self.start_date < date.today() and not self.pk and not self.is_emergency:
                 raise ValidationError('Cannot request leave for past dates')
             
-            # Check notice period
             if hasattr(self, 'leave_type') and self.leave_type and not self.is_emergency:
                 days_until_start = (self.start_date - date.today()).days
                 if days_until_start < self.leave_type.notice_days_required and not self.pk:
@@ -526,7 +515,6 @@ class LeaveRequest(models.Model):
                         f'Leave must be requested at least {self.leave_type.notice_days_required} days in advance'
                     )
         
-        # Validate half day settings
         if self.is_half_day and not self.half_day_period:
             raise ValidationError('Half day period must be specified')
         
@@ -536,7 +524,6 @@ class LeaveRequest(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         
-        # Update leave balance
         if self.pk:
             old_instance = LeaveRequest.objects.get(pk=self.pk)
             if old_instance.status != self.status:
@@ -552,12 +539,12 @@ class LeaveRequest(models.Model):
         balance, _ = LeaveBalance.objects.get_or_create(
             employee=self.employee,
             leave_type=self.leave_type,
-            year=year
+            year=year,
+            defaults={'total_allocated': self.leave_type.default_days_allocated}
         )
         
         days = Decimal(str(self.total_leave_days))
         
-        # Handle status transitions
         if old_status == 'PENDING' and self.status == 'APPROVED':
             balance.pending = F('pending') - days
             balance.used = F('used') + days
@@ -572,7 +559,7 @@ class LeaveRequest(models.Model):
 
     @property
     def total_leave_days(self):
-        """Calculate total leave days excluding weekends and holidays"""
+        """Calculate total leave days"""
         if not self.start_date or not self.end_date:
             return 0
         
@@ -583,7 +570,7 @@ class LeaveRequest(models.Model):
 
     @property
     def is_overlapping(self):
-        """Check if this leave overlaps with another approved leave"""
+        """Check if overlaps with another approved leave"""
         from django.db.models import Q
         
         overlapping = LeaveRequest.objects.filter(
@@ -600,20 +587,17 @@ class LeaveRequest(models.Model):
 
     @property
     def days_until_start(self):
-        """Calculate days until leave starts"""
         if self.start_date:
             return (self.start_date - date.today()).days
         return None
 
     @property
     def is_current(self):
-        """Check if leave is currently active"""
         today = date.today()
         return self.start_date <= today <= self.end_date and self.status == 'APPROVED'
 
     @property
     def is_upcoming(self):
-        """Check if leave is upcoming (within 7 days)"""
         if self.start_date and self.status == 'APPROVED':
             days_until = (self.start_date - date.today()).days
             return 0 < days_until <= 7
@@ -621,19 +605,16 @@ class LeaveRequest(models.Model):
 
     @property
     def requires_medical_certificate(self):
-        """Check if medical certificate is required"""
         if self.leave_type.medical_certificate_required:
             return self.total_leave_days >= self.leave_type.medical_certificate_days_threshold
         return False
 
     def approve_by_manager(self, manager, comments=''):
-        """Approve by manager"""
         self.status = self.LeaveStatus.MANAGER_APPROVED
         self.manager_approved_by = manager
         self.manager_approved_at = timezone.now()
         self.manager_comments = comments
         
-        # If HR approval not required, mark as fully approved
         if not self.leave_type.requires_hr_approval:
             self.status = self.LeaveStatus.APPROVED
             self.final_approved_at = timezone.now()
@@ -641,7 +622,6 @@ class LeaveRequest(models.Model):
         self.save()
 
     def approve_by_hr(self, user, comments=''):
-        """Approve by HR"""
         self.status = self.LeaveStatus.APPROVED
         self.hr_approved_by = user
         self.hr_approved_at = timezone.now()
@@ -650,7 +630,6 @@ class LeaveRequest(models.Model):
         self.save()
 
     def reject(self, user, reason=''):
-        """Reject the leave request"""
         self.status = self.LeaveStatus.REJECTED
         self.rejected_by = user
         self.rejected_at = timezone.now()
@@ -658,7 +637,6 @@ class LeaveRequest(models.Model):
         self.save()
 
     def cancel(self, user, reason=''):
-        """Cancel the leave request"""
         if self.status in ['APPROVED', 'MANAGER_APPROVED', 'HR_APPROVED']:
             self.status = self.LeaveStatus.CANCELLED
             self.cancelled_by = user
@@ -669,7 +647,6 @@ class LeaveRequest(models.Model):
             raise ValidationError('Only approved leave can be cancelled')
 
     def withdraw(self):
-        """Withdraw the leave request (by employee)"""
         if self.status == 'PENDING':
             self.status = self.LeaveStatus.WITHDRAWN
             self.save()
@@ -678,9 +655,8 @@ class LeaveRequest(models.Model):
 
 
 class LeaveEncashment(models.Model):
-    """
-    Leave encashment records - converting unused leave to cash
-    """
+    """Leave encashment - converting unused leave to cash"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.ForeignKey(
         Employee,
         on_delete=models.CASCADE,
@@ -690,11 +666,7 @@ class LeaveEncashment(models.Model):
     year = models.PositiveIntegerField()
     
     days_encashed = models.DecimalField(max_digits=5, decimal_places=2)
-    rate_per_day = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Daily rate for encashment"
-    )
+    rate_per_day = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     
     status = models.CharField(
@@ -714,8 +686,7 @@ class LeaveEncashment(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True,
-        related_name='approved_encashments'
+        blank=True
     )
     approved_at = models.DateTimeField(null=True, blank=True)
     processed_at = models.DateTimeField(null=True, blank=True)
@@ -726,19 +697,17 @@ class LeaveEncashment(models.Model):
     class Meta:
         ordering = ['-requested_at']
         unique_together = ('employee', 'leave_type', 'year')
-        verbose_name = 'Leave Encashment'
-        verbose_name_plural = 'Leave Encashments'
+        verbose_name = _('Leave Encashment')
+        verbose_name_plural = _('Leave Encashments')
 
     def __str__(self):
         return f"{self.employee} - {self.days_encashed} days ({self.year})"
 
     def save(self, *args, **kwargs):
-        # Calculate total amount
         self.total_amount = self.days_encashed * self.rate_per_day
         super().save(*args, **kwargs)
 
 
-# Utility function for calculating working days
 def calculate_working_days(start_date, end_date):
     """Calculate working days excluding weekends and public holidays"""
     holidays = Holiday.objects.filter(
@@ -750,7 +719,6 @@ def calculate_working_days(start_date, end_date):
     current_date = start_date
     
     while current_date <= end_date:
-        # Skip weekends (Saturday=5, Sunday=6)
         if current_date.weekday() < 5 and current_date not in holidays:
             days_count += 1
         current_date += timedelta(days=1)

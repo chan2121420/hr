@@ -1,173 +1,688 @@
-{% extends "base.html" %}
-{% load static %}
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block title %}My Leaves{% endblock %}
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
 
-{% block content %}
-<div class="container-fluid p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h2">My Leave Requests</h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestLeaveModal">
-            <i class="fas fa-plus me-1"></i> Request Leave
-        </button>
-    </div>
+        .container-main {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
 
-    <div class="card shadow-sm">
-        <div class="card-body">
+        .header-banner {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .balance-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .balance-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+        }
+
+        .balance-label {
+            font-size: 0.9rem;
+            color: #6B7280;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .balance-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .balance-subtitle {
+            font-size: 0.85rem;
+            color: #9CA3AF;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1F2937;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .table-modern {
+            margin-bottom: 0;
+        }
+
+        .table-modern thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .table-modern th {
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .table-modern td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .table-modern tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table-modern tbody tr:hover {
+            background: #F9FAFB;
+            transform: scale(1.01);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-approved {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-rejected {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .status-cancelled {
+            background: #F3F4F6;
+            color: #1F2937;
+        }
+
+        .modal-custom .modal-content {
+            border-radius: 20px;
+            border: none;
+        }
+
+        .modal-custom .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            border: none;
+        }
+
+        .form-label-modern {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control-modern {
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control-modern:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #D1D5DB;
+            margin-bottom: 1rem;
+        }
+
+        .action-btn {
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin: 0 0.25rem;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-btn-view {
+            background: #EFF6FF;
+            color: #3B82F6;
+        }
+
+        .action-btn-cancel {
+            background: #FEF2F2;
+            color: #EF4444;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #E5E7EB;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .balance-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-main">
+        <!-- Header -->
+        <div class="header-banner">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2"><i class="fas fa-plane-departure me-3"></i>Leave Management</h1>
+                    <p class="mb-0 text-muted">Manage your leave requests and balances</p>
+                </div>
+                <button class="btn-gradient" onclick="openRequestModal()">
+                    <i class="fas fa-plus me-2"></i>Request Leave
+                </button>
+            </div>
+        </div>
+
+        <!-- Leave Balances -->
+        <div class="balance-grid" id="balance-grid">
+            <div class="balance-card">
+                <div class="loading">
+                    <div class="spinner mx-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leave Requests -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-list"></i>
+                    My Leave Requests
+                </h2>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="filterRequests('all')">
+                        <i class="fas fa-filter me-2"></i>All
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="filterRequests('PENDING')">
+                        Pending
+                    </button>
+                    <button class="btn btn-outline-success" onclick="filterRequests('APPROVED')">
+                        Approved
+                    </button>
+                </div>
+            </div>
+
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
+                <table class="table table-modern">
+                    <thead>
                         <tr>
-                            <th>Type</th>
-                            <th>Dates</th>
+                            <th>Leave Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
                             <th>Days</th>
                             <th>Status</th>
-                            <th>Reviewer</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="leave-table-body">
-                        </tbody>
+                        <tr>
+                            <td colspan="6" class="loading">
+                                <div class="spinner mx-auto"></div>
+                                <p class="mt-3 text-muted">Loading leave requests...</p>
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="requestLeaveModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">New Leave Request</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="leaveRequestForm">
-                    <div class="mb-3">
-                        <label class="form-label">Leave Type</label>
-                        <select class="form-select" id="leave_type" required>
-                            <option value="">Loading...</option>
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" required>
+    <!-- Request Leave Modal -->
+    <div class="modal fade modal-custom" id="requestLeaveModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plane-departure me-2"></i>Request New Leave</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="leaveRequestForm">
+                        <div class="mb-3">
+                            <label class="form-label-modern">Leave Type *</label>
+                            <select class="form-select form-control-modern" id="leave_type" required>
+                                <option value="">Loading...</option>
+                            </select>
+                            <small class="text-muted">Available: <span id="available-days">--</span> days</small>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" required>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-modern">Start Date *</label>
+                                <input type="date" class="form-control form-control-modern" id="start_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-modern">End Date *</label>
+                                <input type="date" class="form-control form-control-modern" id="end_date" required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Reason</label>
-                        <textarea class="form-control" id="reason" rows="3" required></textarea>
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Submit Request</button>
-                    </div>
-                </form>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_half_day">
+                                <label class="form-check-label" for="is_half_day">
+                                    Half Day Leave
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="half-day-period" style="display: none;">
+                            <label class="form-label-modern">Half Day Period</label>
+                            <select class="form-select form-control-modern" id="half_day_period">
+                                <option value="AM">Morning (AM)</option>
+                                <option value="PM">Afternoon (PM)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-modern">Reason *</label>
+                            <textarea class="form-control form-control-modern" id="reason" rows="3" required 
+                                placeholder="Please provide a detailed reason for your leave request..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-modern">Handover Notes</label>
+                            <textarea class="form-control form-control-modern" id="handover_notes" rows="2"
+                                placeholder="Brief handover details for your absence..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Your request will be sent to your manager for approval
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn-gradient">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        loadLeaveRequests();
-        loadLeaveTypes();
-    });
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = '/api/leaves';
+        let allRequests = [];
+        let currentFilter = 'all';
 
-    document.getElementById('leaveRequestForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const body = {
-            leave_type_id: document.getElementById('leave_type').value,
-            start_date: document.getElementById('start_date').value,
-            end_date: document.getElementById('end_date').value,
-            reason: document.getElementById('reason').value,
-        };
-        
-        try {
-            await hrApi.post('leaves/requests/', body);
-            bootstrap.Modal.getInstance(document.getElementById('requestLeaveModal')).hide();
-            document.getElementById('leaveRequestForm').reset();
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLeaveBalances();
             loadLeaveRequests();
-            showToast('Leave request submitted successfully.', 'success');
-        } catch (error) {
-            showToast(`Error: ${error.message}`, 'danger');
-        }
-    });
+            loadLeaveTypes();
+            
+            // Half day checkbox handler
+            document.getElementById('is_half_day').addEventListener('change', (e) => {
+                const periodDiv = document.getElementById('half-day-period');
+                periodDiv.style.display = e.target.checked ? 'block' : 'none';
+                
+                if (e.target.checked) {
+                    const startDate = document.getElementById('start_date');
+                    document.getElementById('end_date').value = startDate.value;
+                }
+            });
+            
+            // Leave type change handler
+            document.getElementById('leave_type').addEventListener('change', async (e) => {
+                const leaveTypeId = e.target.value;
+                if (leaveTypeId) {
+                    await loadAvailableBalance(leaveTypeId);
+                }
+            });
+        });
 
-    async function loadLeaveRequests() {
-        try {
-            const requests = await hrApi.get('leaves/requests/');
-            const tableBody = document.getElementById('leave-table-body');
-            tableBody.innerHTML = ''; 
-
-            if (requests.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No leave requests found.</td></tr>';
-                return;
+        async function loadLeaveBalances() {
+            try {
+                const response = await fetch(`${API_URL}/balances/my_balances/`, {
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                const balances = await response.json();
+                
+                const grid = document.getElementById('balance-grid');
+                
+                if (balances.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No leave balances initialized</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                grid.innerHTML = balances.map(balance => {
+                    const available = balance.available;
+                    const color = available > 5 ? '#10B981' : available > 0 ? '#F59E0B' : '#EF4444';
+                    
+                    return `
+                        <div class="balance-card" style="border-top-color: ${color};">
+                            <div class="balance-label">${balance.leave_type_name}</div>
+                            <div class="balance-value" style="color: ${color};">${available}</div>
+                            <div class="balance-subtitle">${balance.used} used of ${balance.total_allocated} days</div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    Pending: ${balance.pending} | 
+                                    Utilization: ${balance.utilization_percentage.toFixed(0)}%
+                                </small>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Failed to load balances:', error);
             }
+        }
 
-            requests.forEach(req => {
-                let statusBadge = getStatusBadge(req.status);
-                let row = `
+        async function loadLeaveRequests() {
+            try {
+                const response = await fetch(`${API_URL}/requests/my_requests/`, {
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                allRequests = await response.json();
+                displayRequests(allRequests);
+            } catch (error) {
+                console.error('Failed to load requests:', error);
+                document.getElementById('leave-table-body').innerHTML = `
+                    <tr><td colspan="6" class="text-center text-danger">Failed to load leave requests</td></tr>
+                `;
+            }
+        }
+
+        function displayRequests(requests) {
+            const tbody = document.getElementById('leave-table-body');
+            
+            if (requests.length === 0) {
+                tbody.innerHTML = `
                     <tr>
-                        <td><strong>${req.leave_type_name || req.leave_type}</strong></td>
-                        <td>${req.start_date} to ${req.end_date}</td>
-                        <td>${req.total_leave_days}</td>
-                        <td>${statusBadge}</td>
-                        <td>${req.reviewed_by || '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger" 
-                                    ${req.status !== 'PENDING' ? 'disabled' : ''} 
-                                    onclick="cancelRequest(${req.id}, this)">
-                                Cancel
-                            </button>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-plane-slash"></i>
+                            <p>No leave requests found</p>
                         </td>
                     </tr>
                 `;
-                tableBody.innerHTML += row;
-            });
-        } catch (error) {
-            console.error(error);
+                return;
+            }
+            
+            tbody.innerHTML = requests.map(req => {
+                const statusClass = getStatusClass(req.status);
+                const canCancel = req.status === 'PENDING';
+                
+                return `
+                    <tr>
+                        <td>
+                            <span style="width: 12px; height: 12px; background: ${req.leave_type_color}; 
+                                  display: inline-block; border-radius: 50%; margin-right: 8px;"></span>
+                            <strong>${req.leave_type_name}</strong>
+                        </td>
+                        <td>${new Date(req.start_date).toLocaleDateString()}</td>
+                        <td>${new Date(req.end_date).toLocaleDateString()}</td>
+                        <td><strong>${req.total_leave_days}</strong> days</td>
+                        <td><span class="status-badge ${statusClass}">${req.status}</span></td>
+                        <td>
+                            <button class="action-btn action-btn-view" onclick="viewRequest('${req.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${canCancel ? `
+                                <button class="action-btn action-btn-cancel" onclick="withdrawRequest('${req.id}')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
-    }
 
-    async function loadLeaveTypes() {
-        try {
-            const types = await hrApi.get('leaves/types/');
-            const select = document.getElementById('leave_type');
-            select.innerHTML = '<option value="">Select a type...</option>';
-            types.forEach(type => {
-                select.innerHTML += `<option value="${type.id}">${type.name}</option>`;
-            });
-        } catch (error) {
-            console.error(error);
+        function getStatusClass(status) {
+            const classes = {
+                'PENDING': 'status-pending',
+                'APPROVED': 'status-approved',
+                'MANAGER_APPROVED': 'status-approved',
+                'HR_APPROVED': 'status-approved',
+                'REJECTED': 'status-rejected',
+                'CANCELLED': 'status-cancelled',
+                'WITHDRAWN': 'status-cancelled'
+            };
+            return classes[status] || 'status-cancelled';
         }
-    }
 
-    async function cancelRequest(id, button) {
-        if (!confirm('Are you sure you want to cancel this request?')) return;
-        
-        button.disabled = true;
-        try {
-            await hrApi.patch(`leaves/requests/${id}/`, { status: 'CANCELLED' });
-            showToast('Request cancelled.', 'info');
-            loadLeaveRequests();
-        } catch (error) {
-            showToast(`Error: ${error.message}`, 'danger');
-            button.disabled = false;
+        async function loadLeaveTypes() {
+            try {
+                const response = await fetch(`${API_URL}/types/`, {
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                const types = await response.json();
+                
+                const select = document.getElementById('leave_type');
+                select.innerHTML = '<option value="">Select a leave type...</option>';
+                
+                types.results?.forEach(type => {
+                    select.innerHTML += `<option value="${type.id}">${type.name}</option>`;
+                });
+            } catch (error) {
+                console.error('Failed to load leave types:', error);
+            }
         }
-    }
 
-    function getStatusBadge(status) {
-        let badgeClass = 'bg-secondary';
-        if (status === 'PENDING') badgeClass = 'bg-warning text-dark';
-        if (status === 'APPROVED') badgeClass = 'bg-success';
-        if (status === 'REJECTED') badgeClass = 'bg-danger';
-        return `<span class="badge ${badgeClass}">${status}</span>`;
-    }
-</script>
-{% endblock %}
+        async function loadAvailableBalance(leaveTypeId) {
+            try {
+                const response = await fetch(`${API_URL}/types/${leaveTypeId}/eligibility/`, {
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                const data = await response.json();
+                
+                if (data.balance) {
+                    document.getElementById('available-days').textContent = data.balance.available;
+                } else {
+                    document.getElementById('available-days').textContent = '--';
+                }
+            } catch (error) {
+                console.error('Failed to load balance:', error);
+            }
+        }
+
+        function openRequestModal() {
+            new bootstrap.Modal(document.getElementById('requestLeaveModal')).show();
+        }
+
+        document.getElementById('leaveRequestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const isHalfDay = document.getElementById('is_half_day').checked;
+            const body = {
+                leave_type: document.getElementById('leave_type').value,
+                start_date: document.getElementById('start_date').value,
+                end_date: isHalfDay ? document.getElementById('start_date').value : document.getElementById('end_date').value,
+                reason: document.getElementById('reason').value,
+                handover_notes: document.getElementById('handover_notes').value,
+                is_half_day: isHalfDay,
+                half_day_period: isHalfDay ? document.getElementById('half_day_period').value : null
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/requests/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Token ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('requestLeaveModal')).hide();
+                    document.getElementById('leaveRequestForm').reset();
+                    await loadLeaveRequests();
+                    await loadLeaveBalances();
+                    alert('Leave request submitted successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.detail || 'Failed to submit request'));
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error submitting request');
+            }
+        });
+
+        async function withdrawRequest(id) {
+            if (!confirm('Are you sure you want to withdraw this request?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/requests/${id}/withdraw/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+                });
+                
+                if (response.ok) {
+                    alert('Request withdrawn successfully');
+                    await loadLeaveRequests();
+                    await loadLeaveBalances();
+                } else {
+                    alert('Failed to withdraw request');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error withdrawing request');
+            }
+        }
+
+        function viewRequest(id) {
+            window.location.href = `/leaves/request/${id}/`;
+        }
+
+        function filterRequests(filter) {
+            currentFilter = filter;
+            if (filter === 'all') {
+                displayRequests(allRequests);
+            } else {
+                const filtered = allRequests.filter(r => r.status === filter);
+                displayRequests(filtered);
+            }
+        }
+    </script>
+</body>
+</html>
