@@ -3,18 +3,28 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
-    
-    path('accounts/', include('django.contrib.auth.urls')),
-    path('', include('apps.core.urls')),
 
+    # --- Authentication URLs (Fixes 404 & Redirect Loop) ---
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
+    path('accounts/', include('django.contrib.auth.urls')),
+    # -------------------------------------------------------
+
+    # --- Fix Favicon 404 Log Noise ---
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'img/favicon.ico', permanent=True)),
+    # ---------------------------------
+
+    # Dashboard
+    path('', include('apps.core.urls')), 
+    
+    # API Routes
     path('api/accounts/', include('apps.accounts.urls')),
     path('api/employees/', include('apps.employees.urls')),
-    path('api/attendance/', include('apps.attendance.urls')),
     path('api/leaves/', include('apps.leaves.urls')),
+    path('api/attendance/', include('apps.attendance.urls')),
     path('api/payroll/', include('apps.payroll.urls')),
     path('api/performance/', include('apps.performance.urls')),
     path('api/recruitment/', include('apps.recruitment.urls')),
